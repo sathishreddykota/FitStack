@@ -1,0 +1,717 @@
+// ═══════════════════════════════════════════════════════════════
+// FitStack — Prisma Schema
+// PostgreSQL | Prisma v5
+// ═══════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────────────────────────────────────────
+// ENUMS
+// ───────────────────────────────────────────────────────────────
+
+enum Sex {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ActivityLevel {
+  SEDENTARY
+  LIGHTLY_ACTIVE
+  MODERATELY_ACTIVE
+  VERY_ACTIVE
+  EXTRA_ACTIVE
+}
+
+enum FitnessGoal {
+  GAIN_MUSCLE
+  LOSE_FAT
+  MAINTAIN
+  RECOMPOSITION
+  GENERAL_FITNESS
+}
+
+enum TrainingStyle {
+  HYBRID_STRENGTH
+  HYPERTROPHY
+  STRENGTH
+  GENERAL_FITNESS
+  RUNNING_STRENGTH
+}
+
+enum TrainingExperience {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum CardioPreference {
+  NONE
+  LIGHT
+  MODERATE
+  HEAVY
+}
+
+enum DietaryPreference {
+  NO_PREFERENCE
+  VEGETARIAN
+  VEGAN
+  PESCATARIAN
+  KETO
+  HIGH_PROTEIN
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  ELITE
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+  PRE_WORKOUT
+  POST_WORKOUT
+}
+
+enum FoodCategory {
+  GRAINS_CEREALS
+  LEGUMES_PULSES
+  DAIRY
+  MEAT_POULTRY
+  SEAFOOD
+  EGGS
+  VEGETABLES
+  FRUITS
+  NUTS_SEEDS
+  FATS_OILS
+  BEVERAGES
+  SUPPLEMENTS
+  SNACKS
+  SWEETS
+  CONDIMENTS
+  FAST_FOOD
+  MEALS_RECIPES
+  OTHER
+}
+
+enum ServingUnit {
+  g
+  kg
+  ml
+  L
+  cup
+  tbsp
+  tsp
+  piece
+  slice
+  serving
+  scoop
+}
+
+enum MuscleGroup {
+  CHEST
+  UPPER_CHEST
+  BACK
+  LATS
+  SHOULDERS
+  FRONT_DELTS
+  REAR_DELTS
+  BICEPS
+  TRICEPS
+  FOREARMS
+  QUADS
+  HAMSTRINGS
+  GLUTES
+  CALVES
+  CORE
+  TRAPS
+  FULL_BODY
+}
+
+enum ExerciseCategory {
+  STRENGTH
+  HYPERTROPHY
+  POWER
+  CARDIO
+  CONDITIONING
+  MOBILITY
+  STRETCHING
+}
+
+enum EquipmentType {
+  BARBELL
+  DUMBBELL
+  KETTLEBELL
+  CABLE
+  MACHINE
+  BODYWEIGHT
+  BANDS
+  CARDIO_MACHINE
+  OTHER
+}
+
+enum WorkoutDayType {
+  UPPER_STRENGTH
+  LOWER_STRENGTH
+  UPPER_HYPERTROPHY
+  LOWER_HYPERTROPHY
+  PUSH
+  PULL
+  LEGS
+  FULL_BODY
+  CONDITIONING
+  CARDIO
+  RECOVERY
+  SPORT
+  CUSTOM
+}
+
+enum SetType {
+  WORKING
+  WARMUP
+  DROP_SET
+  FAILURE
+  AMRAP
+}
+
+enum PhotoAngle {
+  FRONT
+  SIDE
+  BACK
+}
+
+enum SleepQuality {
+  POOR
+  FAIR
+  GOOD
+  EXCELLENT
+}
+
+enum AIMessageRole {
+  USER
+  ASSISTANT
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum WorkoutStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  MISSED
+}
+
+// ───────────────────────────────────────────────────────────────
+// USER & PROFILE
+// ───────────────────────────────────────────────────────────────
+
+model User {
+  id               String           @id @default(cuid())
+  clerkId          String           @unique
+  email            String           @unique
+  name             String?
+  avatarUrl        String?
+  role             UserRole         @default(USER)
+  onboardingComplete Boolean        @default(false)
+  subscriptionTier SubscriptionTier @default(FREE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relations
+  profile          FitnessProfile?
+  meals            Meal[]
+  workoutSessions  WorkoutSession[]
+  trainingPlans    TrainingPlan[]
+  weightLogs       WeightLog[]
+  bodyMeasurements BodyMeasurement[]
+  waterLogs        WaterLog[]
+  sleepLogs        SleepLog[]
+  habitLogs        HabitLog[]
+  progressPhotos   ProgressPhoto[]
+  aiConversations  AIConversation[]
+  customFoods      Food[]           @relation("UserCreatedFoods")
+  savedMeals       SavedMeal[]
+  subscription     Subscription?
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model FitnessProfile {
+  id                   String              @id @default(cuid())
+  userId               String              @unique
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Basic info
+  age                  Int?
+  sex                  Sex?
+  heightCm             Float?
+  currentWeightKg      Float?
+  targetWeightKg       Float?
+
+  // Activity & goals
+  activityLevel        ActivityLevel?
+  fitnessGoal          FitnessGoal?
+  trainingStyle        TrainingStyle?
+  trainingExperience   TrainingExperience?
+  trainingDaysPerWeek  Int?
+  cardioPreference     CardioPreference?
+  dietaryPreference    DietaryPreference?
+
+  // Calculated targets (stored for quick access)
+  dailyCalorieTarget   Int?
+  dailyProteinTargetG  Int?
+  dailyCarbsTargetG    Int?
+  dailyFatTargetG      Int?
+  dailyWaterTargetL    Float?
+
+  // Manual overrides (user can adjust from calculated values)
+  caloriesToOverride   Int?
+
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([userId])
+}
+
+// ───────────────────────────────────────────────────────────────
+// FOOD DATABASE
+// ───────────────────────────────────────────────────────────────
+
+model Food {
+  id                  String        @id @default(cuid())
+  name                String
+  brand               String?
+  category            FoodCategory  @default(OTHER)
+
+  // Nutrition per 100g (source of truth)
+  caloriesPer100g     Float
+  proteinPer100g      Float
+  carbsPer100g        Float
+  fatPer100g          Float
+  fiberPer100g        Float?
+  sugarPer100g        Float?
+  sodiumMgPer100g     Float?
+
+  // Default serving suggestion
+  defaultServingSizeG Float         @default(100)
+  defaultServingUnit  ServingUnit   @default(g)
+
+  // Metadata
+  isVerified          Boolean       @default(false)  // Verified by admin
+  isPublic            Boolean       @default(true)   // Visible to all users
+  barcode             String?       @unique           // For barcode scanning (Phase 16+)
+
+  // Relations
+  createdByUserId     String?
+  createdByUser       User?         @relation("UserCreatedFoods", fields: [createdByUserId], references: [id])
+  mealItems           MealItem[]
+  savedMealItems      SavedMealItem[]
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([name])
+  @@index([category])
+  @@index([isVerified, isPublic])
+}
+
+// ───────────────────────────────────────────────────────────────
+// NUTRITION LOGGING
+// ───────────────────────────────────────────────────────────────
+
+model Meal {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime   @db.Date
+  mealType     MealType
+  notes        String?
+  items        MealItem[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([userId, date, mealType])
+  @@index([userId, date])
+}
+
+model MealItem {
+  id          String      @id @default(cuid())
+  mealId      String
+  meal        Meal        @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodId      String
+  food        Food        @relation(fields: [foodId], references: [id])
+
+  // Quantity logged
+  quantityG   Float
+  servingUnit ServingUnit @default(g)
+
+  // Snapshot of nutrition at log time (denormalized for performance)
+  calories    Float
+  proteinG    Float
+  carbsG      Float
+  fatG        Float
+  fiberG      Float?
+
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([mealId])
+  @@index([foodId])
+}
+
+model SavedMeal {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  items       SavedMealItem[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+model SavedMealItem {
+  id          String      @id @default(cuid())
+  savedMealId String
+  savedMeal   SavedMeal   @relation(fields: [savedMealId], references: [id], onDelete: Cascade)
+  foodId      String
+  food        Food        @relation(fields: [foodId], references: [id])
+  quantityG   Float
+  servingUnit ServingUnit @default(g)
+
+  @@index([savedMealId])
+}
+
+// ───────────────────────────────────────────────────────────────
+// EXERCISE LIBRARY
+// ───────────────────────────────────────────────────────────────
+
+model Exercise {
+  id               String           @id @default(cuid())
+  name             String           @unique
+  description      String?
+  instructions     String?          @db.Text
+  primaryMuscles   MuscleGroup[]
+  secondaryMuscles MuscleGroup[]
+  category         ExerciseCategory
+  equipment        EquipmentType
+  isCompoundLift   Boolean          @default(false)
+  isKeyLift        Boolean          @default(false)  // Squat, Bench, DL, OHP, Pull-up
+  videoUrl         String?
+  imageUrl         String?
+  isPublic         Boolean          @default(true)
+
+  // Relations
+  sessionExercises SessionExercise[]
+  plannedExercises PlannedExercise[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([name])
+  @@index([category])
+  @@index([isKeyLift])
+}
+
+// ───────────────────────────────────────────────────────────────
+// TRAINING PLANS
+// ───────────────────────────────────────────────────────────────
+
+model TrainingPlan {
+  id              String       @id @default(cuid())
+  userId          String?      // null = system template
+  user            User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  durationWeeks   Int
+  daysPerWeek     Int
+  trainingStyle   TrainingStyle
+  difficultyLevel TrainingExperience @default(BEGINNER)
+  isTemplate      Boolean      @default(false) // System-provided template
+  isActive        Boolean      @default(false) // Currently assigned to user
+  days            WorkoutDay[]
+  sessions        WorkoutSession[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([isTemplate])
+}
+
+model WorkoutDay {
+  id               String           @id @default(cuid())
+  planId           String
+  plan             TrainingPlan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  dayNumber        Int              // 1-7
+  dayName          String           // "Monday", "Day 1"
+  dayType          WorkoutDayType
+  name             String           // "Upper Strength + Hypertrophy"
+  isRestDay        Boolean          @default(false)
+  notes            String?
+  plannedExercises PlannedExercise[]
+
+  @@unique([planId, dayNumber])
+  @@index([planId])
+}
+
+model PlannedExercise {
+  id             String     @id @default(cuid())
+  workoutDayId   String
+  workoutDay     WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  exerciseId     String
+  exercise       Exercise   @relation(fields: [exerciseId], references: [id])
+  orderIndex     Int
+  targetSets     Int
+  targetReps     String     // "8-12", "5x5"
+  targetWeightKg Float?
+  notes          String?
+
+  @@index([workoutDayId])
+}
+
+// ───────────────────────────────────────────────────────────────
+// WORKOUT SESSIONS (LOGGING)
+// ───────────────────────────────────────────────────────────────
+
+model WorkoutSession {
+  id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingPlanId   String?
+  trainingPlan     TrainingPlan?     @relation(fields: [trainingPlanId], references: [id])
+  dayType          WorkoutDayType    @default(CUSTOM)
+  name             String
+  date             DateTime          @db.Date
+  startedAt        DateTime?
+  completedAt      DateTime?
+  
+  // Advanced Calendar Tracking
+  status           WorkoutStatus     @default(PLANNED)
+  originalDate     DateTime?         @db.Date
+  skipReason       String?
+  
+  durationMinutes  Int?
+  exercises        SessionExercise[]
+  notes            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, trainingPlanId])
+}
+
+model SessionExercise {
+  id              String         @id @default(cuid())
+  sessionId       String
+  session         WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseId      String
+  exercise        Exercise       @relation(fields: [exerciseId], references: [id])
+  orderIndex      Int
+  targetSets      Int?
+  targetReps      String?
+  targetWeightKg  Float?
+  notes           String?
+  sets            WorkoutSet[]
+
+  @@index([sessionId])
+}
+
+model WorkoutSet {
+  id                String          @id @default(cuid())
+  sessionExerciseId String
+  sessionExercise   SessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+  setNumber         Int
+  setType           SetType         @default(WORKING)
+  weightKg          Float?
+  reps              Int?
+  durationSeconds   Int?
+  distanceM         Float?
+  rpe               Float?          // Rate of Perceived Exertion 1-10
+  restSeconds       Int?
+  notes             String?
+  isPersonalRecord  Boolean         @default(false)
+  completedAt       DateTime?
+
+  @@index([sessionExerciseId])
+}
+
+// ───────────────────────────────────────────────────────────────
+// BODY PROGRESS TRACKING
+// ───────────────────────────────────────────────────────────────
+
+model WeightLog {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime @db.Date
+  weightKg       Float
+  bodyFatPercent Float?
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model BodyMeasurement {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime @db.Date
+
+  // All measurements in cm
+  chestCm      Float?
+  waistCm      Float?
+  hipsCm       Float?
+  neckCm       Float?
+  leftArmCm    Float?
+  rightArmCm   Float?
+  leftThighCm  Float?
+  rightThighCm Float?
+  leftCalfCm   Float?
+  rightCalfCm  Float?
+  shouldersCm  Float?
+
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model ProgressPhoto {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime   @db.Date
+  angle     PhotoAngle
+  imageUrl  String
+  weight    Float?
+  notes     String?
+  isPrivate Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  @@index([userId, date])
+}
+
+// ───────────────────────────────────────────────────────────────
+// WATER TRACKING
+// ───────────────────────────────────────────────────────────────
+
+model WaterLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  amountMl  Float
+  loggedAt  DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// ───────────────────────────────────────────────────────────────
+// SLEEP & RECOVERY
+// ───────────────────────────────────────────────────────────────
+
+model SleepLog {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime      @db.Date
+  bedtimeAt       DateTime?
+  wakeTimeAt      DateTime?
+  durationMinutes Int?
+  quality         SleepQuality?
+  notes           String?
+  createdAt       DateTime      @default(now())
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model HabitLog {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          DateTime @db.Date
+  stepCount     Int?
+  activeMinutes Int?
+  mood          Int?     // 1-5 scale
+  energyLevel   Int?     // 1-5 scale
+  sorenessLevel Int?     // 1-5 scale
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// ───────────────────────────────────────────────────────────────
+// AI COACH
+// ───────────────────────────────────────────────────────────────
+
+model AIConversation {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  messages  AIMessage[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+model AIMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           AIMessageRole
+  content        String         @db.Text
+  tokensUsed     Int?
+  createdAt      DateTime       @default(now())
+
+  @@index([conversationId])
+}
+
+// ───────────────────────────────────────────────────────────────
+// SUBSCRIPTIONS
+// ───────────────────────────────────────────────────────────────
+
+model Subscription {
+  id                  String           @id @default(cuid())
+  userId              String           @unique
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier                SubscriptionTier @default(FREE)
+  razorpayCustomerId    String?          @unique
+  razorpaySubscriptionId String?         @unique
+  razorpayPlanId       String?
+  status              String?          // active, canceled, past_due
+  currentPeriodStart  DateTime?
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean          @default(false)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([razorpayCustomerId])
+}

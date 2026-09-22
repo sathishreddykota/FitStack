@@ -1,0 +1,401 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+   FitStack Design System
+   Tailwind CSS v4 — CSS-first configuration
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme inline {
+  /* ── Fonts ──────────────────────────────────────────────────── */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── Brand Colors ───────────────────────────────────────────── */
+  /* Primary: Electric Indigo — trust, strength */
+  --color-brand-50: oklch(97% 0.02 275);
+  --color-brand-100: oklch(94% 0.04 275);
+  --color-brand-200: oklch(88% 0.09 275);
+  --color-brand-300: oklch(80% 0.15 275);
+  --color-brand-400: oklch(70% 0.20 275);
+  --color-brand-500: oklch(60% 0.25 275);
+  --color-brand-600: oklch(52% 0.27 275);
+  --color-brand-700: oklch(44% 0.25 275);
+  --color-brand-800: oklch(35% 0.20 275);
+  --color-brand-900: oklch(25% 0.15 275);
+  --color-brand-950: oklch(15% 0.10 275);
+
+  /* Accent: Neon Lime — energy, performance */
+  --color-accent-50: oklch(98% 0.05 130);
+  --color-accent-100: oklch(95% 0.10 130);
+  --color-accent-200: oklch(90% 0.18 130);
+  --color-accent-300: oklch(85% 0.25 130);
+  --color-accent-400: oklch(78% 0.30 130);
+  --color-accent-500: oklch(72% 0.30 130);
+  --color-accent-600: oklch(62% 0.26 130);
+  --color-accent-700: oklch(50% 0.22 130);
+  --color-accent-800: oklch(38% 0.16 130);
+  --color-accent-900: oklch(28% 0.10 130);
+
+  /* Highlight: Amber/Orange — macros, progress */
+  --color-highlight-400: oklch(82% 0.18 60);
+  --color-highlight-500: oklch(74% 0.20 60);
+  --color-highlight-600: oklch(64% 0.18 60);
+
+  /* Surface palette (dark mode first — fitness apps are dark) */
+  --color-surface-0:  oklch(8%  0.01 260);   /* Deepest background */
+  --color-surface-1:  oklch(11% 0.01 260);   /* Card backgrounds */
+  --color-surface-2:  oklch(14% 0.01 260);   /* Elevated cards */
+  --color-surface-3:  oklch(18% 0.01 260);   /* Modals, overlays */
+  --color-surface-4:  oklch(22% 0.015 260);  /* Hover states */
+  --color-surface-5:  oklch(28% 0.015 260);  /* Active states */
+
+  /* Text */
+  --color-text-primary:   oklch(96% 0.005 260);
+  --color-text-secondary: oklch(70% 0.010 260);
+  --color-text-muted:     oklch(48% 0.010 260);
+  --color-text-disabled:  oklch(35% 0.008 260);
+
+  /* Semantic colors */
+  --color-success-400: oklch(78% 0.20 145);
+  --color-success-500: oklch(68% 0.22 145);
+  --color-warning-400: oklch(82% 0.18 75);
+  --color-warning-500: oklch(72% 0.20 75);
+  --color-error-400:   oklch(70% 0.22 25);
+  --color-error-500:   oklch(60% 0.24 25);
+  --color-info-400:    oklch(72% 0.15 230);
+  --color-info-500:    oklch(62% 0.18 230);
+
+  /* Macro colors for charts */
+  --color-protein:  oklch(65% 0.22 25);    /* Reddish */
+  --color-carbs:    oklch(75% 0.20 60);    /* Amber */
+  --color-fat:      oklch(72% 0.22 270);   /* Purple */
+  --color-fiber:    oklch(65% 0.20 145);   /* Green */
+  --color-calories: oklch(72% 0.18 200);   /* Teal */
+
+  /* Border */
+  --color-border:        oklch(22% 0.015 260);
+  --color-border-subtle: oklch(16% 0.010 260);
+
+
+
+  /* ── Border Radius ───────────────────────────────────────────── */
+  --radius-sm:   0.375rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-2xl:  1.5rem;
+  --radius-full: 9999px;
+
+  /* ── Shadows ─────────────────────────────────────────────────── */
+  --shadow-card:    0 1px 3px oklch(0% 0 0 / 0.4), 0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow-elevated: 0 4px 16px oklch(0% 0 0 / 0.5), 0 2px 6px oklch(0% 0 0 / 0.3);
+  --shadow-glow-brand: 0 0 20px oklch(60% 0.25 275 / 0.3);
+  --shadow-glow-accent: 0 0 20px oklch(72% 0.30 130 / 0.3);
+
+  /* ── Transitions ─────────────────────────────────────────────── */
+  --duration-fast:   150ms;
+  --duration-base:   250ms;
+  --duration-slow:   400ms;
+  --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth:     cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── CSS Variables for runtime theming ─────────────────────────── */
+:root {
+  color-scheme: dark;
+
+  --background:   var(--color-surface-0);
+  --foreground:   var(--color-text-primary);
+  --card-bg:      var(--color-surface-1);
+  --card-border:  var(--color-border);
+}
+
+/* ── Sectional Theming (Nutrition) ──────────────────────────────── */
+.theme-nutrition {
+  color-scheme: light;
+  
+  /* Backgrounds */
+  --color-surface-0: oklch(98% 0.01 100); /* Soft cream #f9f9f6 */
+  --color-surface-1: oklch(100% 0 0); /* Pure white for cards */
+  --color-surface-2: oklch(96% 0.01 100); /* Slightly darker cream for elevated/hover */
+  --color-surface-3: oklch(92% 0.02 100); /* Modals/borders */
+  --color-surface-4: oklch(88% 0.03 100);
+  --color-surface-5: oklch(82% 0.04 100);
+
+  /* Deep Forest Green Branding */
+  --color-brand-400: oklch(45% 0.12 140);
+  --color-brand-500: oklch(35% 0.10 140); /* Main deep green */
+  --color-brand-600: oklch(25% 0.08 140);
+
+  /* Text Colors (Dark on light) */
+  --color-text-primary:   oklch(20% 0.02 140); /* Very dark green/grey */
+  --color-text-secondary: oklch(45% 0.04 140);
+  --color-text-muted:     oklch(60% 0.02 140);
+  --color-text-disabled:  oklch(75% 0.01 140);
+
+  /* Borders */
+  --color-border:        oklch(90% 0.02 140);
+  --color-border-subtle: oklch(95% 0.01 140);
+
+  /* Shadows for light mode cards */
+  --shadow-card: 0 4px 20px oklch(0% 0 0 / 0.05), 0 1px 3px oklch(0% 0 0 / 0.02);
+  --shadow-elevated: 0 12px 30px oklch(0% 0 0 / 0.08), 0 4px 10px oklch(0% 0 0 / 0.04);
+  
+  /* Runtime mapping */
+  --background:   var(--color-surface-0);
+  --foreground:   var(--color-text-primary);
+  --card-bg:      var(--color-surface-1);
+  --card-border:  var(--color-border);
+}
+
+/* ── Sectional Theming (Workout) ──────────────────────────────── */
+.theme-workout {
+  color-scheme: dark;
+  
+  /* Backgrounds: Pure/Deep Black */
+  --color-surface-0: oklch(5% 0.00 0); /* Almost black */
+  --color-surface-1: oklch(10% 0.00 0); /* Very dark grey */
+  --color-surface-2: oklch(15% 0.00 0); /* Dark grey */
+  --color-surface-3: oklch(20% 0.00 0);
+  --color-surface-4: oklch(25% 0.00 0);
+  --color-surface-5: oklch(30% 0.00 0);
+
+  /* Neon Orange Branding */
+  --color-brand-400: oklch(70% 0.22 35);
+  --color-brand-500: oklch(65% 0.24 35); /* Main Neon Orange */
+  --color-brand-600: oklch(55% 0.20 35);
+
+  /* Highlight: Also map to Neon Orange for maximum intensity */
+  --color-highlight-400: var(--color-brand-400);
+  --color-highlight-500: var(--color-brand-500);
+  --color-highlight-600: var(--color-brand-600);
+
+  /* Text Colors (Light on Dark) */
+  --color-text-primary:   oklch(98% 0.00 0);
+  --color-text-secondary: oklch(80% 0.00 0);
+  --color-text-muted:     oklch(60% 0.00 0);
+  --color-text-disabled:  oklch(40% 0.00 0);
+
+  /* Borders */
+  --color-border:        oklch(18% 0.00 0);
+  --color-border-subtle: oklch(12% 0.00 0);
+
+  /* Aggressive Shadows */
+  --shadow-card: 0 4px 20px oklch(0% 0 0 / 0.8), 0 1px 3px oklch(0% 0 0 / 0.5);
+  --shadow-elevated: 0 12px 30px oklch(0% 0 0 / 1), 0 4px 10px oklch(0% 0 0 / 0.8);
+  --shadow-glow-highlight: 0 0 24px oklch(65% 0.24 35 / 0.4);
+  
+  /* Runtime mapping */
+  --background:   var(--color-surface-0);
+  --foreground:   var(--color-text-primary);
+  --card-bg:      var(--color-surface-1);
+  --card-border:  var(--color-border);
+}
+
+/* ── Sectional Theming (Water) ──────────────────────────────── */
+.theme-water {
+  color-scheme: light;
+  
+  /* Backgrounds: Fresh Cyan/Blue */
+  --color-surface-0: oklch(98% 0.02 230); /* Light cyan background */
+  --color-surface-1: oklch(100% 0 0); /* White cards */
+  --color-surface-2: oklch(96% 0.03 230);
+  --color-surface-3: oklch(92% 0.04 230);
+  --color-surface-4: oklch(88% 0.05 230);
+  --color-surface-5: oklch(84% 0.06 230);
+
+  /* Deep Aqua/Blue Branding */
+  --color-brand-400: oklch(65% 0.15 230);
+  --color-brand-500: oklch(55% 0.18 230); /* Main deep aqua */
+  --color-brand-600: oklch(45% 0.15 230);
+
+  /* Info maps to Blue/Aqua */
+  --color-info-400: var(--color-brand-400);
+  --color-info-500: var(--color-brand-500);
+
+  /* Text Colors (Dark on light) */
+  --color-text-primary:   oklch(20% 0.05 230); /* Deep blue-grey text */
+  --color-text-secondary: oklch(45% 0.06 230);
+  --color-text-muted:     oklch(60% 0.04 230);
+  --color-text-disabled:  oklch(75% 0.02 230);
+
+  /* Borders */
+  --color-border:        oklch(90% 0.03 230);
+  --color-border-subtle: oklch(95% 0.02 230);
+
+  /* Soft, watery shadows */
+  --shadow-card: 0 4px 20px oklch(65% 0.15 230 / 0.08), 0 1px 3px oklch(65% 0.15 230 / 0.04);
+  --shadow-elevated: 0 12px 30px oklch(65% 0.15 230 / 0.12), 0 4px 10px oklch(65% 0.15 230 / 0.06);
+  
+  /* Runtime mapping */
+  --background:   var(--color-surface-0);
+  --foreground:   var(--color-text-primary);
+  --card-bg:      var(--color-surface-1);
+  --card-border:  var(--color-border);
+}
+
+/* ── Base Styles ────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-color: var(--color-border);
+}
+
+html {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  height: 100%;
+  background-color: var(--color-surface-0);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+/* ── Typography ─────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-1);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-4);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-surface-5);
+}
+
+/* ── Focus styles ───────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Selection ──────────────────────────────────────────────────── */
+::selection {
+  background: oklch(60% 0.25 275 / 0.3);
+  color: var(--color-text-primary);
+}
+
+/* ── Animations ─────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 oklch(60% 0.25 275 / 0.4); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 8px oklch(60% 0.25 275 / 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 oklch(60% 0.25 275 / 0); }
+}
+
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ── Utility classes ────────────────────────────────────────────── */
+.animate-fade-in  { animation: fadeIn  var(--duration-base) var(--ease-smooth) forwards; }
+.animate-slide-up { animation: slideUp var(--duration-base) var(--ease-smooth) forwards; }
+.animate-scale-in { animation: scaleIn var(--duration-base) var(--ease-spring) forwards; }
+.animate-wave-slow { animation: wave 12s linear infinite; }
+.animate-wave-fast { animation: wave 8s linear infinite; }
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-2) 25%,
+    var(--color-surface-3) 50%,
+    var(--color-surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+/* Glass morphism card */
+.glass {
+  background: oklch(11% 0.01 260 / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid oklch(100% 0 0 / 0.06);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-brand-400), var(--color-accent-400));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Brand gradient background */
+.brand-gradient {
+  background: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-500));
+}
+
+/* Accent gradient */
+.accent-gradient {
+  background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-400));
+}
+
+/* Hero gradient overlay */
+.hero-gradient {
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    oklch(60% 0.25 275 / 0.15) 0%,
+    transparent 70%
+  );
+}
+
+/* Progress bar container */
+.progress-track {
+  height: 6px;
+  background: var(--color-surface-3);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+/* Macro ring chart colors */
+.macro-protein { color: var(--color-protein); }
+.macro-carbs   { color: var(--color-carbs); }
+.macro-fat     { color: var(--color-fat); }
+.macro-fiber   { color: var(--color-fiber); }

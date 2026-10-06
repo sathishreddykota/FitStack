@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     const [y, m, d] = date.split("-").map(Number);
-    const parsedDate = new Date(y, m - 1, d);
+    const parsedDate = new Date(Date.UTC(y, m - 1, d));
 
     const { item } = await quickAddMacros({
       userId,

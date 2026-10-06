@@ -11,6 +11,11 @@ export const metadata: Metadata = {
 export default async function SubscriptionPage() {
   const user = await getRequiredUser();
   const tier = await getUserSubscriptionTier(user.id);
+  
+  // Trial Logic
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const isTrialing = tier !== "PRO" && tier !== "ELITE" && user.createdAt > oneWeekAgo;
 
-  return <SubscriptionClient currentTier={tier} />;
+  return <SubscriptionClient currentTier={tier} isTrialing={isTrialing} />;
 }

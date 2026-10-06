@@ -106,13 +106,13 @@ function NavItem({
 // Sidebar (Desktop)
 // ─────────────────────────────────────────────
 
-export function Sidebar() {
+export function Sidebar({ subInfo }: { subInfo?: { isTrial: boolean; daysLeft: number; hasPaid: boolean; tier?: string } }) {
   const { user } = useUser();
 
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] h-screen sticky top-0">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 py-5 border-b border-[var(--color-border-subtle)]">
+      <Link href="/dashboard" className="flex items-center gap-2.5 px-4 py-5 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-1)] transition-colors">
         <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center shadow-[var(--shadow-glow-brand)]">
           <svg
             viewBox="0 0 24 24"
@@ -131,10 +131,29 @@ export function Sidebar() {
         <span className="text-base font-bold tracking-tight text-[var(--color-text-primary)]">
           {APP_NAME}
         </span>
-      </div>
+        {subInfo?.hasPaid && (
+           <span className="bg-[var(--color-brand-500)]/20 text-[var(--color-brand-500)] text-[10px] font-black uppercase tracking-widest py-0.5 px-2 rounded-full border border-[var(--color-brand-500)]/30 ml-auto mr-2">
+             PRO
+           </span>
+        )}
+      </Link>
 
       {/* Main navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {subInfo?.isTrial && !subInfo?.hasPaid && (
+          <div className="mb-4 p-3 rounded-xl bg-[var(--color-brand-500)]/10 border border-[var(--color-brand-500)]/20 animate-fade-in">
+            <p className="text-xs font-bold text-[var(--color-brand-400)] mb-1">
+              Free Trial
+            </p>
+            <p className="text-xs text-[var(--color-text-secondary)] mb-2">
+              {subInfo.daysLeft} {subInfo.daysLeft === 1 ? 'day' : 'days'} left in your trial.
+            </p>
+            <Link href="/settings/subscription" className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-white py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
+              Upgrade Now
+            </Link>
+          </div>
+        )}
+
         <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
           Main
         </p>
@@ -183,9 +202,11 @@ export function Sidebar() {
 export function MobileSidebar({
   open,
   onClose,
+  subInfo,
 }: {
   open: boolean;
   onClose: () => void;
+  subInfo?: { isTrial: boolean; daysLeft: number; hasPaid: boolean; tier?: string };
 }) {
   const { user } = useUser();
 
@@ -209,7 +230,7 @@ export function MobileSidebar({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--color-border-subtle)]">
-          <div className="flex items-center gap-2">
+          <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-7 h-7 rounded-lg brand-gradient flex items-center justify-center">
               <svg
                 viewBox="0 0 24 24"
@@ -226,7 +247,12 @@ export function MobileSidebar({
               </svg>
             </div>
             <span className="font-bold text-[var(--color-text-primary)]">{APP_NAME}</span>
-          </div>
+            {subInfo?.hasPaid && (
+               <span className="bg-[var(--color-brand-500)]/20 text-[var(--color-brand-500)] text-[10px] font-black uppercase tracking-widest py-0.5 px-2 rounded-full border border-[var(--color-brand-500)]/30">
+                 PRO
+               </span>
+            )}
+          </Link>
           <button
             onClick={onClose}
             className="rounded-lg p-1.5 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)] transition-colors"
@@ -238,6 +264,20 @@ export function MobileSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {subInfo?.isTrial && !subInfo?.hasPaid && (
+            <div className="mb-4 p-3 rounded-xl bg-[var(--color-brand-500)]/10 border border-[var(--color-brand-500)]/20 animate-fade-in">
+              <p className="text-xs font-bold text-[var(--color-brand-400)] mb-1">
+                Free Trial
+              </p>
+              <p className="text-xs text-[var(--color-text-secondary)] mb-2">
+                {subInfo.daysLeft} {subInfo.daysLeft === 1 ? 'day' : 'days'} left in your trial.
+              </p>
+              <Link href="/settings/subscription" onClick={onClose} className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-white py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
+                Upgrade Now
+              </Link>
+            </div>
+          )}
+
           <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
             Main
           </p>

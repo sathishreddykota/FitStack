@@ -70,7 +70,7 @@ export function NutritionClient({
   waterAmountMl,
 }: NutritionClientProps) {
   const router = useRouter();
-  const dateStr = format(date, "yyyy-MM-dd");
+  const dateStr = date.toISOString().split("T")[0];
 
   // Refresh server component data after mutation
   const handleRefresh = useCallback(() => {
@@ -109,8 +109,9 @@ export function NutritionClient({
         proteinG: acc.proteinG + item.proteinG,
         carbsG: acc.carbsG + item.carbsG,
         fatG: acc.fatG + item.fatG,
+        fiberG: acc.fiberG + (item.fiberG ?? 0),
       }),
-      { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
+      { calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0 },
     );
   };
 
@@ -131,7 +132,7 @@ export function NutritionClient({
         
         <div className="relative z-10 flex flex-col gap-2">
           <p className="text-sm font-medium tracking-wide text-white/80 uppercase">
-            {format(date, "EEEE, d MMMM yyyy")}
+            {new Intl.DateTimeFormat("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(date)}
           </p>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
             Food that<br/>
@@ -179,6 +180,7 @@ export function NutritionClient({
                 totalProteinG={mealTotals.proteinG}
                 totalCarbsG={mealTotals.carbsG}
                 totalFatG={mealTotals.fatG}
+                totalFiberG={mealTotals.fiberG}
                 defaultOpen={mealType === "BREAKFAST"}
                 onRefresh={handleRefresh}
               />

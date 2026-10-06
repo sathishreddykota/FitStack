@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 
 interface SubscriptionClientProps {
   currentTier: string;
+  isTrialing?: boolean;
 }
 
-export function SubscriptionClient({ currentTier }: SubscriptionClientProps) {
+export function SubscriptionClient({ currentTier, isTrialing }: SubscriptionClientProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -123,7 +124,7 @@ export function SubscriptionClient({ currentTier }: SubscriptionClientProps) {
     }
   };
 
-  const isPro = currentTier === "PRO" || currentTier === "ELITE";
+  const isPro = currentTier === "PRO" || currentTier === "ELITE" || isTrialing;
 
   return (
     <div className="max-w-4xl mx-auto space-y-12 animate-fade-in pb-12">
@@ -200,7 +201,7 @@ export function SubscriptionClient({ currentTier }: SubscriptionClientProps) {
               <h3 className="text-2xl font-black text-[var(--color-brand-400)]">FitStack PRO</h3>
               {isPro && (
                 <span className="bg-[var(--color-brand-500)]/10 text-[var(--color-brand-400)] text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">
-                  Active
+                  {isTrialing ? "Trial Active" : "Active"}
                 </span>
               )}
             </div>
@@ -235,7 +236,7 @@ export function SubscriptionClient({ currentTier }: SubscriptionClientProps) {
           </ul>
 
           <div className="mt-auto relative z-10">
-            {isPro ? (
+            {isPro && !isTrialing ? (
               <button 
                 onClick={handleCancel}
                 disabled={isLoading}
@@ -245,12 +246,12 @@ export function SubscriptionClient({ currentTier }: SubscriptionClientProps) {
               </button>
             ) : (
               <button 
-                onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_RAZORPAY_PRO_MONTHLY_PLAN_ID || "plan_xxx")} // Replace with actual env var later if needed, but we used process.env in server, wait, in client we need NEXT_PUBLIC_
+                onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_RAZORPAY_PRO_MONTHLY_PLAN_ID || "plan_xxx")} 
                 disabled={isLoading}
                 className="w-full flex justify-center items-center gap-2 py-4 bg-[var(--color-brand-500)] text-black font-black uppercase tracking-widest rounded-xl hover:bg-white hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(255,87,34,0.3)] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
               >
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                Upgrade to Pro
+                {isTrialing ? "Upgrade Early" : "Upgrade to Pro"}
               </button>
             )}
           </div>

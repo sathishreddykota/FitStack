@@ -21,6 +21,7 @@ import {
   Moon,
   Activity,
   ArrowRight,
+  Leaf,
 } from "lucide-react";
 import { formatDate, formatRelativeDate } from "@/lib/utils";
 import { GOAL_LABELS, TRAINING_STYLE_LABELS } from "@/lib/constants";
@@ -101,12 +102,18 @@ export default async function DashboardPage() {
       sum + meal.items.reduce((s: number, item: { carbsG: number }) => s + item.carbsG, 0),
     0,
   );
+  const todayFiber = todayMeals.reduce(
+    (sum: number, meal: { items: { fiberG: number | null }[] }) =>
+      sum + meal.items.reduce((s: number, item: { fiberG: number | null }) => s + (item.fiberG ?? 0), 0),
+    0,
+  );
   const todayWaterMl = todayWater.reduce((sum: number, log: { amountMl: number }) => sum + log.amountMl, 0);
 
   // Targets from profile (with fallbacks)
   const calorieTarget = profile?.dailyCalorieTarget ?? null;
   const proteinTarget = profile?.dailyProteinTargetG ?? null;
   const carbsTarget = profile?.dailyCarbsTargetG ?? null;
+  const fiberTarget = proteinTarget ? Math.round(proteinTarget / 4) : null;
   const waterTargetL = profile?.dailyWaterTargetL ?? null;
 
   // Weight data
@@ -155,7 +162,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <StatCard
             label="Calories"
             value={hasAnyMealData ? Math.round(todayCalories) : "—"}
@@ -201,6 +208,20 @@ export default async function DashboardPage() {
             progressColor="var(--color-carbs)"
             empty={!hasAnyMealData}
             emptyMessage="No carbs logged yet"
+          />
+          <StatCard
+            label="Fiber"
+            value={hasAnyMealData ? `${Math.round(todayFiber)}` : "—"}
+            unit={hasAnyMealData ? "g" : undefined}
+            subtext={fiberTarget ? `of ${fiberTarget}g target` : undefined}
+            icon={Leaf}
+            iconColor="var(--color-fiber)"
+            progress={
+              hasAnyMealData && fiberTarget ? (todayFiber / fiberTarget) * 100 : undefined
+            }
+            progressColor="var(--color-fiber)"
+            empty={!hasAnyMealData}
+            emptyMessage="No fiber logged yet"
           />
           <StatCard
             label="Water"

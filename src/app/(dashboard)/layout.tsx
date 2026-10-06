@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import { getRequiredUser } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { AppLock } from "@/components/layout/app-lock";
+
+import { getSubscriptionInfo } from "@/lib/services/subscription-service";
 
 // ─────────────────────────────────────────────
 // Dashboard Layout
@@ -10,7 +13,8 @@ import { Topbar } from "@/components/layout/topbar";
 // Server component that:
 // 1. Verifies authentication (redirects to /sign-in if not)
 // 2. Checks onboarding status (redirects to /onboarding if incomplete)
-// 3. Renders the sidebar + topbar shell
+// 3. Checks trial status (redirects to /settings/subscription if expired)
+// 4. Renders the sidebar + topbar shell
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const user = await getRequiredUser();
@@ -20,19 +24,26 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     redirect("/onboarding");
   }
 
+  // Redirect to subscription page if trial is expired and no active plan
+  const subInfo = await getSubscriptionInfo(user.id);
+  // We'll handle the actual route-based blocking in a client component called AppLock
+  
   return (
     <div className="flex h-screen bg-[var(--color-surface-0)] overflow-hidden">
-      {/* Desktop Sidebar */}
-      <Sidebar />
+      <Sidebar subInfo={subInfo} />
 
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile topbar */}
-        <Topbar />
+        <Topbar subInfo={subInfo} />
 
         {/* Page content with scroll */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</div>
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <AppLock isLocked={subInfo.isLocked}>
+              {children}
+            </AppLock>
+          </div>
         </main>
       </div>
     </div>

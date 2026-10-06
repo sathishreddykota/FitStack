@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Menu, Bell } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { MobileSidebar } from "./sidebar";
 import { APP_NAME } from "@/lib/constants";
 
@@ -10,7 +11,7 @@ import { APP_NAME } from "@/lib/constants";
 // Topbar — shown on mobile, hidden on desktop
 // ─────────────────────────────────────────────
 
-export function Topbar() {
+export function Topbar({ subInfo }: { subInfo?: { isTrial: boolean; daysLeft: number; hasPaid: boolean; tier?: string } }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -26,7 +27,8 @@ export function Topbar() {
         </button>
 
         {/* Logo (centered on mobile) */}
-        <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
+        <div className="flex-1 flex justify-center">
+          <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <div className="w-6 h-6 rounded-md brand-gradient flex items-center justify-center">
             <svg
               viewBox="0 0 24 24"
@@ -43,6 +45,12 @@ export function Topbar() {
             </svg>
           </div>
           <span className="text-sm font-bold text-[var(--color-text-primary)]">{APP_NAME}</span>
+          {subInfo?.hasPaid && (
+             <span className="bg-[var(--color-brand-500)]/20 text-[var(--color-brand-500)] text-[10px] font-black uppercase tracking-widest py-0.5 px-2 rounded-full border border-[var(--color-brand-500)]/30">
+               PRO
+             </span>
+          )}
+          </Link>
         </div>
 
         {/* Right: notifications + user */}
@@ -61,6 +69,7 @@ export function Topbar() {
       <MobileSidebar
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
+        subInfo={subInfo}
       />
     </>
   );

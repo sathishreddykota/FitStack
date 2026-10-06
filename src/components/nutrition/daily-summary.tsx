@@ -15,6 +15,7 @@ interface DailySummaryProps {
   proteinTarget: number;
   carbsTarget: number;
   fatTarget: number;
+  fiberTarget?: number;
 }
 
 export function DailySummary({
@@ -27,10 +28,13 @@ export function DailySummary({
   proteinTarget,
   carbsTarget,
   fatTarget,
+  fiberTarget,
 }: DailySummaryProps) {
   const caloriePct = calcPercent(calories, calorieTarget);
   const remaining = Math.max(calorieTarget - calories, 0);
   const over = calories > calorieTarget;
+  
+  const resolvedFiberTarget = fiberTarget ?? Math.round(proteinTarget / 4);
 
   return (
     <div className="rounded-3xl border-none bg-white p-8 shadow-card relative overflow-hidden">
@@ -102,7 +106,7 @@ export function DailySummary({
           { label: "Protein", current: proteinG, target: proteinTarget, color: "var(--color-protein)" },
           { label: "Carbs", current: carbsG, target: carbsTarget, color: "var(--color-carbs)" },
           { label: "Fat", current: fatG, target: fatTarget, color: "var(--color-fat)" },
-          ...(fiberG > 0 ? [{ label: "Fiber", current: fiberG, target: 30, color: "var(--color-fiber)" }] : []),
+          ...(fiberG > 0 ? [{ label: "Fiber", current: fiberG, target: resolvedFiberTarget, color: "var(--color-fiber)" }] : []),
         ].map(({ label, current, target, color }, idx) => (
           <div key={label} className={cn("flex flex-col", idx === 3 ? "hidden sm:flex" : "")}>
             <div className="flex items-center gap-2 mb-1">

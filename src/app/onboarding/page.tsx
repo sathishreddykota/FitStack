@@ -280,7 +280,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Form Container */}
-        <div className="flex-1 px-6 py-8 pb-48">
+        <div className="flex-1 px-6 py-8 pb-8">
           <div className="mx-auto w-full max-w-xl">
             <form onSubmit={handleSubmit(onSubmit)} className="animate-slide-up">
               {/* Step indicator (Mobile only / inside form) */}
@@ -818,22 +818,22 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* ── Navigation (Sticky Footer) ───────────────────────────── */}
-            <div className="fixed bottom-0 left-0 right-0 lg:right-1/2 p-4 lg:p-6 bg-gradient-to-t from-[var(--color-surface-0)] via-[var(--color-surface-0)] to-transparent z-30 flex items-center justify-center pointer-events-none">
-              <div className="w-full max-w-xl flex items-center justify-between gap-4 pointer-events-auto">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={goBack}
-                  disabled={step === 1}
-                  className={cn(
-                    "gap-2 bg-[var(--color-surface-1)] shadow-card transition-all duration-300",
-                    step === 1 ? "opacity-0 pointer-events-none w-0 p-0 overflow-hidden" : "opacity-100"
-                  )}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Back
-                </Button>
+            {/* ── Navigation (Static Footer) ───────────────────────────── */}
+            <div className="mt-8 pt-6 border-t border-[var(--color-border-subtle)] flex items-center justify-center">
+              <div className="w-full flex items-center justify-between gap-4">
+                {step > 1 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={goBack}
+                    className="gap-2 bg-[var(--color-surface-1)] shadow-card transition-all duration-300"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Back
+                  </Button>
+                ) : (
+                  <div></div>
+                )}
 
                 {step < STEPS.length ? (
                   <Button type="button" onClick={goNext} className="gap-2 flex-1 shadow-elevated">

@@ -50,13 +50,13 @@ export function StatCard({
 
       {/* Value */}
       {empty ? (
-        <p className="text-xl text-[var(--color-text-muted)] font-medium leading-snug mt-1">{emptyMessage}</p>
+        <p className="text-sm sm:text-base text-[var(--color-text-muted)] font-medium leading-snug mt-1">{emptyMessage}</p>
       ) : (
         <>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">{value}</span>
+            <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">{value}</span>
             {unit && (
-              <span className="text-sm text-[var(--color-text-muted)] font-medium">{unit}</span>
+              <span className="text-xs sm:text-sm text-[var(--color-text-muted)] font-medium">{unit}</span>
             )}
           </div>
           {subtext && (

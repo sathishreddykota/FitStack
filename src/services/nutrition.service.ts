@@ -64,7 +64,7 @@ export async function searchFoods(params: FoodSearchParams) {
 // ── Get Daily Meals ─────────────────────────────────────────────────
 
 export async function getDayMeals(userId: string, date: Date) {
-  const dayStart = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayStart = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 
   const meals = await prisma.meal.findMany({
     where: { userId, date: dayStart },
@@ -115,7 +115,7 @@ export async function addFoodToMeal(input: AddFoodInput) {
   const fatG = food.fatPer100g * ratio;
   const fiberG = food.fiberPer100g != null ? food.fiberPer100g * ratio : null;
 
-  const dayStart = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayStart = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 
   // Upsert meal (create if it doesn't exist for this meal type + date)
   const meal = await prisma.meal.upsert({
@@ -187,7 +187,7 @@ export async function quickAddMacros(input: QuickAddMacrosInput) {
     });
   }
 
-  const dayStart = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayStart = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 
   const meal = await prisma.meal.upsert({
     where: {

@@ -20,6 +20,7 @@ interface MealItemRowProps {
     proteinG: number;
     carbsG: number;
     fatG: number;
+    fiberG: number | null;
   };
   onRefresh: () => void;
 }
@@ -77,6 +78,16 @@ export function MealItemRow({ item, onRefresh }: MealItemRowProps) {
               F {Math.round(item.fatG)}g
             </span>
           </span>
+          {(item.fiberG ?? 0) > 0 && (
+            <>
+              <span className="text-[10px] text-[var(--color-text-disabled)]">·</span>
+              <span className="text-xs text-[var(--color-text-muted)]">
+                <span className="font-semibold" style={{ color: "var(--color-fiber)" }}>
+                  Fib {Math.round(item.fiberG!)}g
+                </span>
+              </span>
+            </>
+          )}
         </div>
       </div>
 

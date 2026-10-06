@@ -27,10 +27,14 @@ export default async function NutritionPage({
   let date: Date;
   if (dateParam) {
     const [y, m, d] = dateParam.split("-").map(Number);
-    date = new Date(y, m - 1, d);
-    if (isNaN(date.getTime())) date = new Date();
+    date = new Date(Date.UTC(y, m - 1, d));
+    if (isNaN(date.getTime())) {
+      const now = new Date();
+      date = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    }
   } else {
-    date = new Date();
+    const now = new Date();
+    date = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
   }
 
   // Fetch meals for the day

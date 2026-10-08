@@ -1,41 +1,33 @@
 import { NextResponse } from "next/server";
 import { getRequiredUser } from "@/lib/auth";
 import { getRazorpay } from "@/lib/razorpay";
-import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
     const user = await getRequiredUser();
-    const { planId } = await req.json();
-
-    if (!planId) {
-      return NextResponse.json({ error: "Missing planId" }, { status: 400 });
-    }
-
-    // 1. Create a Razorpay subscription
-    // Using standard Razorpay API to create a subscription for the given plan
+    
+    // We don't need a planId for standard one-time orders
+    // We will hardcode the price to 199 INR (19900 paise)
+    
     const razorpay = getRazorpay();
-    const subscription = await razorpay.subscriptions.create({
-      plan_id: planId,
-      total_count: 120, // max billing cycles (e.g., 10 years for monthly)
-      customer_notify: 1,
+    const order = await razorpay.orders.create({
+      amount: 19900, // 199.00 INR
+      currency: "INR",
+      receipt: `receipt_${user.id}_${Date.now()}`,
       notes: {
-        userId: user.id, // Store userId in notes so webhook knows who paid
+        userId: user.id, // Store userId so webhook knows who paid
+        type: "pro_1_month"
       },
     });
 
-    // 2. We don't save the active subscription to Prisma yet. 
-    // We wait for the webhook `subscription.charged` or `subscription.authenticated`
-    // to confirm payment was successful before upgrading the user.
-
-    // 3. Return the subscription_id to the client so they can launch checkout
+    // Return the order_id to the client so they can launch checkout
     return NextResponse.json({
-      subscriptionId: subscription.id,
+      orderId: order.id,
     });
   } catch (error: any) {
-    console.error("[RAZORPAY_CREATE_SUB]", error);
+    console.error("[RAZORPAY_CREATE_ORDER]", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create subscription" },
+      { error: error.message || "Failed to create order" },
       { status: 500 }
     );
   }

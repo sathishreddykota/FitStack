@@ -25,16 +25,16 @@ export function SubscriptionClient({ currentTier, isTrialing }: SubscriptionClie
     };
   }, []);
 
-  const handleUpgrade = async (planId: string) => {
+  const handleUpgrade = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // 1. Create Subscription on our backend
+      // 1. Create Order on our backend
       const response = await fetch("/api/razorpay/create-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({}),
       });
 
       const data = await response.json();
@@ -46,9 +46,9 @@ export function SubscriptionClient({ currentTier, isTrialing }: SubscriptionClie
       // 2. Open Razorpay Checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Use public key
-        subscription_id: data.subscriptionId,
+        order_id: data.orderId,
         name: "FitStack PRO",
-        description: "Unlock all premium tracking and AI Coach features.",
+        description: "1 Month of PRO access (One-time payment)",
         image: "https://your-logo-url.png", // Optional: Add app logo
         handler: async function (response: any) {
           try {
@@ -58,7 +58,7 @@ export function SubscriptionClient({ currentTier, isTrialing }: SubscriptionClie
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_subscription_id: response.razorpay_subscription_id,
+                razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
               }),
             });
@@ -68,7 +68,7 @@ export function SubscriptionClient({ currentTier, isTrialing }: SubscriptionClie
               throw new Error(errData.error || "Verification failed");
             }
 
-            alert("Payment Successful! Your account has been upgraded.");
+            alert("Payment Successful! Your account has been upgraded for 1 month.");
             window.location.reload();
           } catch (err: any) {
             setError("Payment succeeded, but verification failed: " + err.message);
@@ -246,7 +246,7 @@ export function SubscriptionClient({ currentTier, isTrialing }: SubscriptionClie
               </button>
             ) : (
               <button 
-                onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_RAZORPAY_PRO_MONTHLY_PLAN_ID || "plan_xxx")} 
+                onClick={handleUpgrade} 
                 disabled={isLoading}
                 className="w-full flex justify-center items-center gap-2 py-4 bg-[var(--color-brand-500)] text-black font-black uppercase tracking-widest rounded-xl hover:bg-white hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(255,87,34,0.3)] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
               >

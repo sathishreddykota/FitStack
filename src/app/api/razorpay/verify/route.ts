@@ -7,17 +7,17 @@ import { SubscriptionTier } from "@prisma/client";
 export async function POST(req: Request) {
   try {
     const user = await getRequiredUser();
-    const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = await req.json();
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = await req.json();
 
-    if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
       return NextResponse.json({ error: "Missing Razorpay payment parameters" }, { status: 400 });
     }
 
-    // Razorpay subscription signature verification
-    // string to hash = razorpay_payment_id + "|" + subscription_id
+    // Razorpay order signature verification
+    // string to hash = razorpay_order_id + "|" + razorpay_payment_id
     const generated_signature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
-      .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
     if (generated_signature !== razorpay_signature) {
@@ -25,19 +25,26 @@ export async function POST(req: Request) {
     }
 
     // Signature is valid, we can synchronously upgrade the user to PRO
-    // The webhook will also fire eventually, but this gives instant feedback
+    const now = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
+
     await prisma.subscription.upsert({
       where: { userId: user.id },
       create: {
         userId: user.id,
         tier: SubscriptionTier.PRO,
-        razorpaySubscriptionId: razorpay_subscription_id,
-        status: "active", // Assume active if first payment succeeded
+        razorpaySubscriptionId: razorpay_order_id,
+        status: "active",
+        currentPeriodStart: now,
+        currentPeriodEnd: thirtyDaysFromNow,
       },
       update: {
         tier: SubscriptionTier.PRO,
-        razorpaySubscriptionId: razorpay_subscription_id,
+        razorpaySubscriptionId: razorpay_order_id,
         status: "active",
+        currentPeriodStart: now,
+        currentPeriodEnd: thirtyDaysFromNow,
       },
     });
 

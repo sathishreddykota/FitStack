@@ -134,13 +134,16 @@ export function MealCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcript: magicText, mealType, date }),
       });
-      if (!res.ok) throw new Error("Failed to parse magic log");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to parse magic log");
+      }
       toast.success("Magic Log success!");
       setMagicText("");
       setIsMagicLogging(false);
       onRefresh();
-    } catch {
-      toast.error("Could not parse that food. Please try again.");
+    } catch (error: any) {
+      toast.error(error.message || "Could not parse that food. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

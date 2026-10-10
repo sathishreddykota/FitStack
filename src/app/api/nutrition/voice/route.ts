@@ -90,8 +90,8 @@ Return the structured list.`,
 
     return NextResponse.json({ success: true, data: addedItems });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("[POST /api/nutrition/voice]", error);
-    return NextResponse.json({ success: false, error: "Failed to process voice log" }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || "Failed to process voice log" }, { status: 500 });
   }
 }

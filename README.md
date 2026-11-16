@@ -31,7 +31,7 @@ npm run db:migrate:prod
 | Script | What it does |
 |---|---|
 | `npm run dev` / `build` / `start` | Next.js |
-| `npm test` | Unit tests (dates, plans, entitlements, units, strength) |
+| `npm test` | Unit tests. Set `TEST_DATABASE_URL` (migrated + seeded Postgres) to also run the DB integration and API route tests |
 | `npm run typecheck` / `lint` | TypeScript / ESLint |
 | `npm run db:migrate` | Create a new migration in development |
 | `npm run db:migrate:prod` | Apply migrations (CI / production) |

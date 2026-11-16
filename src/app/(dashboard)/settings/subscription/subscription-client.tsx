@@ -1,263 +1,201 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Check, Loader2, Sparkles, AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AlertCircle, Check, Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { api, errorMessage } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
-interface SubscriptionClientProps {
-  currentTier: string;
-  isTrialing?: boolean;
+interface Props {
+  plan: { isPro: boolean; source: "trial" | "paid" | null; proUntil: string | null; daysLeft: number };
+  price: { amountPaise: number; days: number };
+  payments: { id: string; amountPaise: number; grantDays: number; paidAt: string | null; razorpayPaymentId: string | null }[];
+  prefill: { name: string; email: string };
 }
 
-export function SubscriptionClient({ currentTier, isTrialing }: SubscriptionClientProps) {
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+type RazorpayCtor = new (options: Record<string, unknown>) => {
+  open: () => void;
+  on: (event: string, cb: (r: { error: { description: string } }) => void) => void;
+};
+
+const FREE_FEATURES = ["Food logging with 200+ Indian foods", "Quick add & saved meals", "Water & weight tracking", "Manual workout logging"];
+const PRO_FEATURES = [
+  "AI Coach that reads your real data",
+  "Log food & workouts by voice or text",
+  "Personal training plans + calendar",
+  "Progress, strength & PR analytics",
+  "Sleep & recovery tracking",
+  "Daily AI insight",
+];
+
+const rupees = (paise: number) => `₹${(paise / 100).toLocaleString("en-IN")}`;
+const fmtDate = (iso: string) =>
+  new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
+
+function loadCheckout(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if ((window as unknown as { Razorpay?: RazorpayCtor }).Razorpay) return resolve(true);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+export function SubscriptionClient({ plan, price, payments, prefill }: Props) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load Razorpay script dynamically
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    document.body.appendChild(script);
-    
-    return () => {
-      document.body.removeChild(script);
-    };
+    loadCheckout();
   }, []);
 
-  const handleUpgrade = async () => {
+  const buy = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
-
-      // 1. Create Order on our backend
-      const response = await fetch("/api/razorpay/create-subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to initiate upgrade");
-      }
-
-      // 2. Open Razorpay Checkout
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Use public key
-        order_id: data.orderId,
+      if (!(await loadCheckout())) throw new Error("Couldn't load the payment window. Check your connection.");
+      const order = await api<{ orderId: string; amount: number; currency: string; keyId: string }>(
+        "/api/razorpay/create-order",
+        { method: "POST" },
+      );
+      const Razorpay = (window as unknown as { Razorpay: RazorpayCtor }).Razorpay;
+      const rzp = new Razorpay({
+        key: order.keyId,
+        order_id: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
         name: "FitStack PRO",
-        description: "1 Month of PRO access (One-time payment)",
-        image: "https://your-logo-url.png", // Optional: Add app logo
-        handler: async function (response: any) {
+        description: `${price.days} days of PRO`,
+        prefill,
+        theme: { color: "#FF5722" },
+        handler: async (res: RazorpayResponse) => {
           try {
-            setIsLoading(true);
-            const verifyRes = await fetch("/api/razorpay/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
-
-            if (!verifyRes.ok) {
-              const errData = await verifyRes.json();
-              throw new Error(errData.error || "Verification failed");
-            }
-
-            alert("Payment Successful! Your account has been upgraded for 1 month.");
-            window.location.reload();
-          } catch (err: any) {
-            setError("Payment succeeded, but verification failed: " + err.message);
+            const result = await api<{ status: string; proUntil: string | null }>("/api/razorpay/verify", { body: res });
+            toast.success(
+              result.proUntil ? `You're PRO until ${fmtDate(result.proUntil)} 🎉` : "Payment received — you're PRO 🎉",
+            );
+            router.refresh();
+          } catch (err) {
+            // The webhook will still grant PRO if the payment went through.
+            setError(`Payment received, confirming it took longer than usual: ${errorMessage(err)}. Refresh in a minute.`);
+          } finally {
             setIsLoading(false);
           }
         },
-        prefill: {
-          name: "",
-          email: "",
-        },
-        theme: {
-          color: "#FF5722",
-        },
-      };
-
-      const rzp = new (window as any).Razorpay(options);
-      
-      rzp.on("payment.failed", function (response: any) {
-        setError(response.error.description);
+        modal: { ondismiss: () => setIsLoading(false) },
       });
-
+      rzp.on("payment.failed", (r) => {
+        setError(r.error.description);
+        setIsLoading(false);
+      });
       rzp.open();
-
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(errorMessage(err));
       setIsLoading(false);
     }
   };
 
-  const handleCancel = async () => {
-    if (!confirm("Are you sure you want to cancel your PRO subscription? You will lose access to premium features at the end of your billing cycle.")) {
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const response = await fetch("/api/razorpay/cancel-subscription", {
-        method: "POST",
-      });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to cancel subscription");
-      }
-      
-      alert("Subscription cancelled successfully.");
-      window.location.reload();
-    } catch (err: any) {
-      setError(err.message);
-      setIsLoading(false);
-    }
-  };
-
-  const isPro = currentTier === "PRO" || currentTier === "ELITE" || isTrialing;
+  const paid = plan.source === "paid";
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12 animate-fade-in pb-12">
-      
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl lg:text-5xl font-black tracking-tight text-[var(--color-text-primary)]">
-          Subscription Plan
-        </h1>
+    <div className="mx-auto max-w-4xl animate-fade-in space-y-10 pb-12">
+      <div className="space-y-3 text-center">
+        <h1 className="text-4xl font-black tracking-tight text-[var(--color-text-primary)] lg:text-5xl">FitStack PRO</h1>
         <p className="text-lg text-[var(--color-text-secondary)]">
-          Manage your subscription and billing details.
+          Everything premium fitness apps charge ₹500+ for, at {rupees(price.amountPaise)} a month.
         </p>
+        {plan.isPro && plan.proUntil && (
+          <p className="inline-flex items-center gap-2 rounded-full bg-[var(--color-brand-500)]/10 px-4 py-1.5 text-sm font-bold text-[var(--color-brand-400)]">
+            <Sparkles className="h-4 w-4" />
+            {plan.source === "trial" ? "Free trial" : "PRO"} active until {fmtDate(plan.proUntil)} · {plan.daysLeft}{" "}
+            {plan.daysLeft === 1 ? "day" : "days"} left
+          </p>
+        )}
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-start gap-3 text-red-500">
-          <AlertCircle className="h-5 w-5 mt-0.5" />
-          <p className="font-medium text-sm">{error}</p>
+        <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-red-500">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <p className="text-sm font-medium">{error}</p>
         </div>
       )}
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        {/* FREE PLAN */}
-        <div className={cn(
-          "rounded-3xl p-8 border",
-          !isPro ? "bg-[var(--color-surface-1)] border-[var(--color-border)] shadow-sm" : "bg-[var(--color-surface-0)] border-[var(--color-border-subtle)] opacity-60"
-        )}>
-          <div className="mb-8">
-            <h3 className="text-2xl font-black text-[var(--color-text-primary)] mb-2">Basic Tracker</h3>
-            <div className="flex items-end gap-2 text-[var(--color-text-primary)]">
-              <span className="text-5xl font-black">Free</span>
-            </div>
-            <p className="text-[var(--color-text-secondary)] mt-4">Essential nutrition logging.</p>
-          </div>
-
-          <ul className="space-y-4 mb-8">
-            <li className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-              <span>Search & Log Foods</span>
-            </li>
-            <li className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-              <span>Barcode Scanner</span>
-            </li>
-            <li className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-              <span>Macro Tracking</span>
-            </li>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div
+          className={cn(
+            "rounded-3xl border p-8",
+            !plan.isPro ? "border-[var(--color-border)] bg-[var(--color-surface-1)]" : "border-[var(--color-border-subtle)] opacity-70",
+          )}
+        >
+          <h3 className="mb-2 text-2xl font-black text-[var(--color-text-primary)]">Free</h3>
+          <p className="mb-6 text-5xl font-black text-[var(--color-text-primary)]">₹0</p>
+          <ul className="space-y-3">
+            {FREE_FEATURES.map((f) => (
+              <li key={f} className="flex items-center gap-3 text-[var(--color-text-secondary)]">
+                <Check className="h-5 w-5 shrink-0 text-green-500" />
+                {f}
+              </li>
+            ))}
           </ul>
-
-          <div className="mt-auto">
-            {!isPro ? (
-              <div className="w-full text-center py-3 bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] font-bold rounded-xl border border-[var(--color-border)] uppercase tracking-wider text-sm">
-                Current Plan
-              </div>
-            ) : null}
-          </div>
+          {!plan.isPro && (
+            <p className="mt-8 rounded-xl border border-[var(--color-border)] py-3 text-center text-sm font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
+              Current plan
+            </p>
+          )}
         </div>
 
-        {/* PRO PLAN */}
-        <div className={cn(
-          "rounded-3xl p-8 border relative overflow-hidden",
-          isPro 
-            ? "bg-[var(--color-surface-1)] border-[var(--color-brand-500)] shadow-[0_0_30px_rgba(255,87,34,0.15)]" 
-            : "bg-gradient-to-b from-[var(--color-surface-1)] to-[var(--color-surface-0)] border-[var(--color-border)]"
-        )}>
-          {/* Glow effect */}
-          <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-gradient-to-br from-[var(--color-brand-500)] to-transparent rounded-full opacity-10 blur-3xl pointer-events-none" />
-
-          <div className="mb-8 relative z-10">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-2xl font-black text-[var(--color-brand-400)]">FitStack PRO</h3>
-              {isPro && (
-                <span className="bg-[var(--color-brand-500)]/10 text-[var(--color-brand-400)] text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">
-                  {isTrialing ? "Trial Active" : "Active"}
-                </span>
-              )}
-            </div>
-            <div className="flex items-end gap-2 text-[var(--color-text-primary)]">
-              <span className="text-5xl font-black">₹199</span>
-              <span className="text-[var(--color-text-secondary)] font-medium pb-1">/ month</span>
-            </div>
-            <p className="text-[var(--color-text-secondary)] mt-4">Unlock everything you need to crush your goals.</p>
-          </div>
-
-          <ul className="space-y-4 mb-8 relative z-10">
-            <li className="flex items-center gap-3 text-[var(--color-text-primary)]">
-              <Sparkles className="h-5 w-5 text-[var(--color-brand-500)] flex-shrink-0" />
-              <span className="font-semibold">AI Coach Insights & Chat</span>
-            </li>
-            <li className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-              <Check className="h-5 w-5 text-[var(--color-brand-500)] flex-shrink-0" />
-              <span>Full Workout Logger & Plans</span>
-            </li>
-            <li className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-              <Check className="h-5 w-5 text-[var(--color-brand-500)] flex-shrink-0" />
-              <span>Advanced Progress Analytics</span>
-            </li>
-            <li className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-              <Check className="h-5 w-5 text-[var(--color-brand-500)] flex-shrink-0" />
-              <span>Recovery & Sleep Tracking</span>
-            </li>
-            <li className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-              <Check className="h-5 w-5 text-[var(--color-brand-500)] flex-shrink-0" />
-              <span>Interactive Water Tracker</span>
-            </li>
+        <div className="relative overflow-hidden rounded-3xl border border-[var(--color-brand-500)] bg-[var(--color-surface-1)] p-8 shadow-[0_0_30px_rgba(255,87,34,0.15)]">
+          <h3 className="mb-2 text-2xl font-black text-[var(--color-brand-400)]">PRO</h3>
+          <p className="mb-6 flex items-end gap-2 text-[var(--color-text-primary)]">
+            <span className="text-5xl font-black">{rupees(price.amountPaise)}</span>
+            <span className="pb-1 font-medium text-[var(--color-text-secondary)]">/ {price.days} days</span>
+          </p>
+          <ul className="mb-8 space-y-3">
+            {PRO_FEATURES.map((f) => (
+              <li key={f} className="flex items-center gap-3 text-[var(--color-text-primary)]">
+                <Sparkles className="h-5 w-5 shrink-0 text-[var(--color-brand-500)]" />
+                {f}
+              </li>
+            ))}
           </ul>
-
-          <div className="mt-auto relative z-10">
-            {isPro && !isTrialing ? (
-              <button 
-                onClick={handleCancel}
-                disabled={isLoading}
-                className="w-full flex justify-center items-center py-3 text-red-400 hover:bg-red-500/10 font-bold rounded-xl transition-colors uppercase tracking-wider text-sm disabled:opacity-50"
-              >
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Cancel Subscription"}
-              </button>
-            ) : (
-              <button 
-                onClick={handleUpgrade} 
-                disabled={isLoading}
-                className="w-full flex justify-center items-center gap-2 py-4 bg-[var(--color-brand-500)] text-black font-black uppercase tracking-widest rounded-xl hover:bg-white hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(255,87,34,0.3)] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
-              >
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                {isTrialing ? "Upgrade Early" : "Upgrade to Pro"}
-              </button>
-            )}
-          </div>
+          <button
+            onClick={buy}
+            disabled={isLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-brand-500)] py-4 font-black uppercase tracking-widest text-black transition-all hover:bg-white disabled:opacity-50"
+          >
+            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+            {paid ? `Add ${price.days} more days` : plan.source === "trial" ? "Get PRO now" : "Upgrade to PRO"}
+          </button>
+          <p className="mt-3 text-center text-xs text-[var(--color-text-muted)]">
+            One-time payment via UPI, cards or netbanking. No auto-renewal{paid ? " — new days are added to your current period" : ""}.
+          </p>
         </div>
-
       </div>
+
+      {payments.length > 0 && (
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
+          <h2 className="mb-4 text-lg font-bold text-[var(--color-text-primary)]">Payment history</h2>
+          <ul className="divide-y divide-[var(--color-border)]">
+            {payments.map((p) => (
+              <li key={p.id} className="flex items-center justify-between py-3 text-sm">
+                <span className="text-[var(--color-text-secondary)]">{p.paidAt ? fmtDate(p.paidAt) : "—"}</span>
+                <span className="text-[var(--color-text-muted)]">+{p.grantDays} days</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{rupees(p.amountPaise)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

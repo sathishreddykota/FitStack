@@ -34,7 +34,7 @@ export function RecoveryClient({ todayStr, initialData, trendsData }: RecoveryCl
       const res = await fetch("/api/recovery/sleep", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dateStr: todayStr, durationMinutes, quality }),
+        body: JSON.stringify({ date: todayStr, durationMinutes, quality }),
       });
       if (!res.ok) throw new Error("Failed to save sleep");
       toast.success("Sleep logged successfully");
@@ -49,7 +49,7 @@ export function RecoveryClient({ todayStr, initialData, trendsData }: RecoveryCl
       const res = await fetch("/api/recovery/habits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dateStr: todayStr, mood, energyLevel: energy, sorenessLevel: soreness }),
+        body: JSON.stringify({ date: todayStr, mood, energyLevel: energy, sorenessLevel: soreness }),
       });
       if (!res.ok) throw new Error("Failed to save habits");
       toast.success("Readiness logged successfully");

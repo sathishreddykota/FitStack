@@ -1,33 +1,28 @@
-import { getRequiredUser } from "@/lib/auth";
 import type { Metadata } from "next";
-import { format } from "date-fns";
-import { RecoveryClient } from "./recovery-client";
-import { getRecoveryDashboardData, getRecoveryTrends } from "@/lib/services/recovery-service";
+import { requireOnboardedUser, todayOf } from "@/server/auth";
+import { recoveryForDay, recoveryTrend } from "@/server/tracking";
 import { PremiumGate } from "@/components/shared/premium-gate";
+import { RecoveryClient } from "./recovery-client";
 
 export const metadata: Metadata = {
   title: "Sleep & Recovery",
   description: "Track sleep quality, mood, energy, and daily habits to optimise recovery.",
 };
 
-export default async function RecoveryPage() {
-  const user = await getRequiredUser();
-  
-  // Use local formatting to get the correct current date string for the user
-  const todayStr = format(new Date(), "yyyy-MM-dd");
+async function RecoveryData() {
+  const user = await requireOnboardedUser();
+  const today = todayOf(user).str;
+  const [day, trend] = await Promise.all([recoveryForDay(user.id, today), recoveryTrend(user.id, today)]);
+  return <RecoveryClient todayStr={today} initialData={day} trendsData={trend} />;
+}
 
-  const [dashboardData, trendsData] = await Promise.all([
-    getRecoveryDashboardData(user.id, todayStr),
-    getRecoveryTrends(user.id),
-  ]);
-
+export default function RecoveryPage() {
   return (
-    <PremiumGate title="Unlock Recovery & Sleep" description="Upgrade to PRO to track your sleep quality, mood, energy, and optimize your rest days.">
-      <RecoveryClient 
-        initialData={dashboardData}
-        trendsData={trendsData}
-        todayStr={todayStr}
-      />
+    <PremiumGate
+      title="Unlock Recovery & Sleep"
+      description="Track sleep, mood, energy and soreness, and see how recovery affects your training."
+    >
+      <RecoveryData />
     </PremiumGate>
   );
 }

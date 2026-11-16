@@ -140,16 +140,16 @@ export function Sidebar({ subInfo }: { subInfo?: { isTrial: boolean; daysLeft: n
 
       {/* Main navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {subInfo?.isTrial && !subInfo?.hasPaid && (
+        {subInfo && !subInfo.hasPaid && (
           <div className="mb-4 p-3 rounded-xl bg-[var(--color-brand-500)]/10 border border-[var(--color-brand-500)]/20 animate-fade-in">
             <p className="text-xs font-bold text-[var(--color-brand-400)] mb-1">
-              Free Trial
+              {subInfo.isTrial ? "PRO Trial" : "Free Plan"}
             </p>
             <p className="text-xs text-[var(--color-text-secondary)] mb-2">
-              {subInfo.daysLeft} {subInfo.daysLeft === 1 ? 'day' : 'days'} left in your trial.
+              {subInfo.isTrial ? `${subInfo.daysLeft} ${subInfo.daysLeft === 1 ? 'day' : 'days'} of PRO left.` : 'AI coach, plans & analytics for ₹199/mo.'}
             </p>
             <Link href="/settings/subscription" className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-white py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
-              Upgrade Now
+              Get PRO
             </Link>
           </div>
         )}
@@ -264,16 +264,16 @@ export function MobileSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {subInfo?.isTrial && !subInfo?.hasPaid && (
+          {subInfo && !subInfo.hasPaid && (
             <div className="mb-4 p-3 rounded-xl bg-[var(--color-brand-500)]/10 border border-[var(--color-brand-500)]/20 animate-fade-in">
               <p className="text-xs font-bold text-[var(--color-brand-400)] mb-1">
-                Free Trial
+                {subInfo.isTrial ? "PRO Trial" : "Free Plan"}
               </p>
               <p className="text-xs text-[var(--color-text-secondary)] mb-2">
-                {subInfo.daysLeft} {subInfo.daysLeft === 1 ? 'day' : 'days'} left in your trial.
+                {subInfo.isTrial ? `${subInfo.daysLeft} ${subInfo.daysLeft === 1 ? 'day' : 'days'} of PRO left.` : 'AI coach, plans & analytics for ₹199/mo.'}
               </p>
               <Link href="/settings/subscription" onClick={onClose} className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-white py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
-                Upgrade Now
+                Get PRO
               </Link>
             </div>
           )}

@@ -69,12 +69,13 @@ export function RecoveryTrendsChart({ data }: RecoveryTrendsChartProps) {
           <Area 
             yAxisId="left"
             type="monotone" 
-            dataKey="sleepDuration" 
+            dataKey="sleepHours" 
             name="Sleep (hrs)"
             stroke="var(--color-brand-400)" 
             strokeWidth={3}
             fillOpacity={1} 
-            fill="url(#colorSleep)" 
+            fill="url(#colorSleep)"
+            connectNulls 
             activeDot={{ r: 6, fill: "var(--color-brand-400)", strokeWidth: 0 }}
           />
           <Area 

@@ -9,6 +9,10 @@ import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { api } from "@/lib/api-client";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { addDays } from "@/server/dates";
 import { DailySummary } from "@/components/nutrition/daily-summary";
 import { MealCard } from "@/components/nutrition/meal-card";
 import { WaterTracker } from "@/components/nutrition/water-tracker";
@@ -28,6 +32,7 @@ interface MealItemData {
   foodId: string;
   food: { name: string; brand: string | null };
   quantityG: number;
+  quantity: number | null;
   servingUnit: ServingUnit;
   calories: number;
   proteinG: number;
@@ -44,6 +49,7 @@ interface MealData {
 
 interface NutritionClientProps {
   date: Date;
+  today: string;
   meals: MealData[];
   totals: {
     calories: number;
@@ -64,6 +70,7 @@ interface NutritionClientProps {
 
 export function NutritionClient({
   date,
+  today,
   meals,
   totals,
   targets,
@@ -79,12 +86,7 @@ export function NutritionClient({
 
   const handleAddWater = async (amountMl: number) => {
     try {
-      const res = await fetch("/api/nutrition/water", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountMl, date: dateStr }),
-      });
-      if (!res.ok) throw new Error();
+      await api("/api/nutrition/water", { body: { amountMl, date: dateStr } });
       handleRefresh();
       toast.success(`Logged ${amountMl}ml water 💧`);
       return true;
@@ -131,9 +133,29 @@ export function NutritionClient({
         <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-white opacity-10 blur-3xl"></div>
         
         <div className="relative z-10 flex flex-col gap-2">
-          <p className="text-sm font-medium tracking-wide text-white/80 uppercase">
-            {new Intl.DateTimeFormat("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(date)}
-          </p>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/nutrition?date=${addDays(dateStr, -1)}`}
+              aria-label="Previous day"
+              className="rounded-full bg-white/15 p-1.5 hover:bg-white/25"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+            <p className="text-sm font-medium tracking-wide text-white/80 uppercase">
+              {dateStr === today
+                ? "Today"
+                : new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(date)}
+            </p>
+            {dateStr < today && (
+              <Link
+                href={dateStr === addDays(today, -1) ? "/nutrition" : `/nutrition?date=${addDays(dateStr, 1)}`}
+                aria-label="Next day"
+                className="rounded-full bg-white/15 p-1.5 hover:bg-white/25"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
             Food that<br/>
             <span className="font-serif italic font-medium opacity-90">nourishes life.</span>

@@ -10,7 +10,6 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import { format } from "date-fns";
 
 interface WeightLogData {
   date: Date;
@@ -35,7 +34,7 @@ export function WeightTrendChart({ data, targetWeight, startingWeight }: WeightT
 
   // Format data for Recharts
   const chartData = data.map((log) => ({
-    date: format(new Date(log.date), "MMM dd"),
+    date: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(log.date)),
     weight: log.weightKg,
   }));
 

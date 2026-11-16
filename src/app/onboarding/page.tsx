@@ -230,7 +230,7 @@ export default function OnboardingPage() {
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       });
       const json = await res.json();
 

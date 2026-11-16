@@ -637,6 +637,7 @@ const foods = [
 ];
 
 import { indianFoods } from "./indian-foods";
+import { extraExercises } from "./exercises-extra";
 const allFoods = [...foods, ...indianFoods];
 
 // ─────────────────────────────────────────────
@@ -865,10 +866,15 @@ async function main() {
   console.log("🌱 Starting FitStack database seed...");
 
   // ─── Seed Foods ───────────────────────────────────────────────
-  console.log(`\n📦 Seeding ${allFoods.length} foods...`);
+  // Idempotent: only insert public foods whose name isn't in the DB yet.
+  const existing = new Set(
+    (await prisma.food.findMany({ where: { isPublic: true }, select: { name: true } })).map((f) => f.name),
+  );
+  const newFoods = allFoods.filter((f) => !existing.has(f.name));
+  console.log(`\n📦 Seeding foods: ${newFoods.length} new, ${allFoods.length - newFoods.length} already present`);
 
   await prisma.food.createMany({
-    data: allFoods.map((food) => ({
+    data: newFoods.map((food) => ({
       name: food.name,
       category: food.category as any,
       caloriesPer100g: food.caloriesPer100g,
@@ -881,16 +887,46 @@ async function main() {
       isVerified: true,
       isPublic: true,
     })),
-    skipDuplicates: false,
   });
-  const foodCount = allFoods.length;
-  console.log(`✅ Seeded ${foodCount} foods`);
+
+  // Food-specific unit sizes ("1 piece" of X = N grams), matched by name prefix.
+  const servingSizes: Array<[string, "piece" | "slice" | "scoop" | "cup", number]> = [
+    ["Egg", "piece", 50],
+    ["Boiled Egg", "piece", 50],
+    ["Chapati", "piece", 40],
+    ["Roti", "piece", 40],
+    ["Banana", "piece", 118],
+    ["Apple", "piece", 182],
+    ["Idli", "piece", 40],
+    ["Bread", "slice", 28],
+    ["Whey Protein", "scoop", 30],
+    ["Milk", "cup", 245],
+    ["White Rice (Cooked)", "cup", 160],
+    ["Oats", "cup", 80],
+  ];
+  let servingCount = 0;
+  for (const [prefix, unit, grams] of servingSizes) {
+    const matches = await prisma.food.findMany({
+      where: { isPublic: true, name: { startsWith: prefix, mode: "insensitive" } },
+      select: { id: true },
+    });
+    for (const f of matches) {
+      await prisma.foodServing.upsert({
+        where: { foodId_unit: { foodId: f.id, unit } },
+        create: { foodId: f.id, unit, grams, label: `1 ${unit}` },
+        update: { grams },
+      });
+      servingCount++;
+    }
+  }
+  console.log(`✅ ${servingCount} food serving sizes set`);
 
   // ─── Seed Exercises ───────────────────────────────────────────
-  console.log(`\n💪 Seeding ${exercises.length} exercises...`);
+  const allExercises = [...exercises, ...extraExercises];
+  console.log(`\n💪 Seeding ${allExercises.length} exercises...`);
   let exerciseCount = 0;
 
-  for (const exercise of exercises) {
+  for (const exercise of allExercises) {
     await prisma.exercise.upsert({
       where: { name: exercise.name },
       create: {

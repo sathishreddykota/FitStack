@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // FitStack — Prisma Schema
-// PostgreSQL | Prisma v5
+// PostgreSQL | Prisma v6
 // ═══════════════════════════════════════════════════════════════
 
 generator client {
@@ -220,16 +220,16 @@ enum WorkoutStatus {
 // ───────────────────────────────────────────────────────────────
 
 model User {
-  id               String           @id @default(cuid())
-  clerkId          String           @unique
-  email            String           @unique
-  name             String?
-  avatarUrl        String?
-  role             UserRole         @default(USER)
-  onboardingComplete Boolean        @default(false)
-  subscriptionTier SubscriptionTier @default(FREE)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id                 String           @id @default(cuid())
+  clerkId            String           @unique
+  email              String           @unique
+  name               String?
+  avatarUrl          String?
+  role               UserRole         @default(USER)
+  onboardingComplete Boolean          @default(false)
+  subscriptionTier   SubscriptionTier @default(FREE)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   // Relations
   profile          FitnessProfile?
@@ -243,47 +243,53 @@ model User {
   habitLogs        HabitLog[]
   progressPhotos   ProgressPhoto[]
   aiConversations  AIConversation[]
-  customFoods      Food[]           @relation("UserCreatedFoods")
+  customFoods      Food[]            @relation("UserCreatedFoods")
   savedMeals       SavedMeal[]
   subscription     Subscription?
+  paymentOrders    PaymentOrder[]
+  aiUsage          AIUsage[]
+  aiInsights       AIInsight[]
 
   @@index([clerkId])
   @@index([email])
 }
 
 model FitnessProfile {
-  id                   String              @id @default(cuid())
-  userId               String              @unique
-  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Basic info
-  age                  Int?
-  sex                  Sex?
-  heightCm             Float?
-  currentWeightKg      Float?
-  targetWeightKg       Float?
+  age             Int?
+  sex             Sex?
+  heightCm        Float?
+  currentWeightKg Float?
+  targetWeightKg  Float?
 
   // Activity & goals
-  activityLevel        ActivityLevel?
-  fitnessGoal          FitnessGoal?
-  trainingStyle        TrainingStyle?
-  trainingExperience   TrainingExperience?
-  trainingDaysPerWeek  Int?
-  cardioPreference     CardioPreference?
-  dietaryPreference    DietaryPreference?
+  activityLevel       ActivityLevel?
+  fitnessGoal         FitnessGoal?
+  trainingStyle       TrainingStyle?
+  trainingExperience  TrainingExperience?
+  trainingDaysPerWeek Int?
+  cardioPreference    CardioPreference?
+  dietaryPreference   DietaryPreference?
 
   // Calculated targets (stored for quick access)
-  dailyCalorieTarget   Int?
-  dailyProteinTargetG  Int?
-  dailyCarbsTargetG    Int?
-  dailyFatTargetG      Int?
-  dailyWaterTargetL    Float?
+  dailyCalorieTarget  Int?
+  dailyProteinTargetG Int?
+  dailyCarbsTargetG   Int?
+  dailyFatTargetG     Int?
+  dailyWaterTargetL   Float?
 
   // Manual overrides (user can adjust from calculated values)
-  caloriesToOverride   Int?
+  caloriesToOverride Int?
 
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  // IANA timezone used to decide what "today" means for this user
+  timezone String @default("Asia/Kolkata")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }
@@ -293,41 +299,56 @@ model FitnessProfile {
 // ───────────────────────────────────────────────────────────────
 
 model Food {
-  id                  String        @id @default(cuid())
-  name                String
-  brand               String?
-  category            FoodCategory  @default(OTHER)
+  id       String       @id @default(cuid())
+  name     String
+  brand    String?
+  category FoodCategory @default(OTHER)
 
   // Nutrition per 100g (source of truth)
-  caloriesPer100g     Float
-  proteinPer100g      Float
-  carbsPer100g        Float
-  fatPer100g          Float
-  fiberPer100g        Float?
-  sugarPer100g        Float?
-  sodiumMgPer100g     Float?
+  caloriesPer100g Float
+  proteinPer100g  Float
+  carbsPer100g    Float
+  fatPer100g      Float
+  fiberPer100g    Float?
+  sugarPer100g    Float?
+  sodiumMgPer100g Float?
 
   // Default serving suggestion
-  defaultServingSizeG Float         @default(100)
-  defaultServingUnit  ServingUnit   @default(g)
+  defaultServingSizeG Float       @default(100)
+  defaultServingUnit  ServingUnit @default(g)
 
   // Metadata
-  isVerified          Boolean       @default(false)  // Verified by admin
-  isPublic            Boolean       @default(true)   // Visible to all users
-  barcode             String?       @unique           // For barcode scanning (Phase 16+)
+  isVerified Boolean @default(false) // Verified by admin
+  isPublic   Boolean @default(true) // Visible to all users
+  barcode    String? @unique // For barcode scanning (Phase 16+)
 
   // Relations
-  createdByUserId     String?
-  createdByUser       User?         @relation("UserCreatedFoods", fields: [createdByUserId], references: [id])
-  mealItems           MealItem[]
-  savedMealItems      SavedMealItem[]
+  createdByUserId String?
+  createdByUser   User?           @relation("UserCreatedFoods", fields: [createdByUserId], references: [id])
+  mealItems       MealItem[]
+  savedMealItems  SavedMealItem[]
+  servings        FoodServing[]
 
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([name])
   @@index([category])
   @@index([isVerified, isPublic])
+  @@index([createdByUserId])
+}
+
+// Food-specific unit sizes, e.g. "1 piece" of Masala Dosa = 150 g.
+// Units without a row here fall back to the generic table in src/server/nutrition/units.ts.
+model FoodServing {
+  id     String      @id @default(cuid())
+  foodId String
+  food   Food        @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  unit   ServingUnit
+  grams  Float
+  label  String?
+
+  @@unique([foodId, unit])
 }
 
 // ───────────────────────────────────────────────────────────────
@@ -335,41 +356,42 @@ model Food {
 // ───────────────────────────────────────────────────────────────
 
 model Meal {
-  id           String     @id @default(cuid())
-  userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date         DateTime   @db.Date
-  mealType     MealType
-  notes        String?
-  items        MealItem[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime   @db.Date
+  mealType  MealType
+  notes     String?
+  items     MealItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   @@unique([userId, date, mealType])
   @@index([userId, date])
 }
 
 model MealItem {
-  id          String      @id @default(cuid())
-  mealId      String
-  meal        Meal        @relation(fields: [mealId], references: [id], onDelete: Cascade)
-  foodId      String
-  food        Food        @relation(fields: [foodId], references: [id])
+  id     String @id @default(cuid())
+  mealId String
+  meal   Meal   @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodId String
+  food   Food   @relation(fields: [foodId], references: [id])
 
-  // Quantity logged
+  // Quantity logged: what the user typed (quantity + servingUnit) and its weight in grams
   quantityG   Float
+  quantity    Float?
   servingUnit ServingUnit @default(g)
 
   // Snapshot of nutrition at log time (denormalized for performance)
-  calories    Float
-  proteinG    Float
-  carbsG      Float
-  fatG        Float
-  fiberG      Float?
+  calories Float
+  proteinG Float
+  carbsG   Float
+  fatG     Float
+  fiberG   Float?
 
-  notes       String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([mealId])
   @@index([foodId])
@@ -395,6 +417,7 @@ model SavedMealItem {
   foodId      String
   food        Food        @relation(fields: [foodId], references: [id])
   quantityG   Float
+  quantity    Float?
   servingUnit ServingUnit @default(g)
 
   @@index([savedMealId])
@@ -414,7 +437,7 @@ model Exercise {
   category         ExerciseCategory
   equipment        EquipmentType
   isCompoundLift   Boolean          @default(false)
-  isKeyLift        Boolean          @default(false)  // Squat, Bench, DL, OHP, Pull-up
+  isKeyLift        Boolean          @default(false) // Squat, Bench, DL, OHP, Pull-up
   videoUrl         String?
   imageUrl         String?
   isPublic         Boolean          @default(true)
@@ -423,8 +446,8 @@ model Exercise {
   sessionExercises SessionExercise[]
   plannedExercises PlannedExercise[]
 
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([name])
   @@index([category])
@@ -436,35 +459,35 @@ model Exercise {
 // ───────────────────────────────────────────────────────────────
 
 model TrainingPlan {
-  id              String       @id @default(cuid())
-  userId          String?      // null = system template
-  user            User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String             @id @default(cuid())
+  userId          String? // null = system template
+  user            User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
   name            String
   description     String?
   durationWeeks   Int
   daysPerWeek     Int
   trainingStyle   TrainingStyle
   difficultyLevel TrainingExperience @default(BEGINNER)
-  isTemplate      Boolean      @default(false) // System-provided template
-  isActive        Boolean      @default(false) // Currently assigned to user
+  isTemplate      Boolean            @default(false) // System-provided template
+  isActive        Boolean            @default(false) // Currently assigned to user
   days            WorkoutDay[]
   sessions        WorkoutSession[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
   @@index([userId])
   @@index([isTemplate])
 }
 
 model WorkoutDay {
-  id               String           @id @default(cuid())
+  id               String            @id @default(cuid())
   planId           String
-  plan             TrainingPlan     @relation(fields: [planId], references: [id], onDelete: Cascade)
-  dayNumber        Int              // 1-7
-  dayName          String           // "Monday", "Day 1"
+  plan             TrainingPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  dayNumber        Int // 1-7
+  dayName          String // "Monday", "Day 1"
   dayType          WorkoutDayType
-  name             String           // "Upper Strength + Hypertrophy"
-  isRestDay        Boolean          @default(false)
+  name             String // "Upper Strength + Hypertrophy"
+  isRestDay        Boolean           @default(false)
   notes            String?
   plannedExercises PlannedExercise[]
 
@@ -480,7 +503,7 @@ model PlannedExercise {
   exercise       Exercise   @relation(fields: [exerciseId], references: [id])
   orderIndex     Int
   targetSets     Int
-  targetReps     String     // "8-12", "5x5"
+  targetReps     String // "8-12", "5x5"
   targetWeightKg Float?
   notes          String?
 
@@ -492,44 +515,44 @@ model PlannedExercise {
 // ───────────────────────────────────────────────────────────────
 
 model WorkoutSession {
-  id               String            @id @default(cuid())
-  userId           String
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trainingPlanId   String?
-  trainingPlan     TrainingPlan?     @relation(fields: [trainingPlanId], references: [id])
-  dayType          WorkoutDayType    @default(CUSTOM)
-  name             String
-  date             DateTime          @db.Date
-  startedAt        DateTime?
-  completedAt      DateTime?
-  
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingPlanId String?
+  trainingPlan   TrainingPlan?  @relation(fields: [trainingPlanId], references: [id])
+  dayType        WorkoutDayType @default(CUSTOM)
+  name           String
+  date           DateTime       @db.Date
+  startedAt      DateTime?
+  completedAt    DateTime?
+
   // Advanced Calendar Tracking
-  status           WorkoutStatus     @default(PLANNED)
-  originalDate     DateTime?         @db.Date
-  skipReason       String?
-  
-  durationMinutes  Int?
-  exercises        SessionExercise[]
-  notes            String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  status       WorkoutStatus @default(PLANNED)
+  originalDate DateTime?     @db.Date
+  skipReason   String?
+
+  durationMinutes Int?
+  exercises       SessionExercise[]
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([userId, date])
   @@index([userId, trainingPlanId])
 }
 
 model SessionExercise {
-  id              String         @id @default(cuid())
-  sessionId       String
-  session         WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  exerciseId      String
-  exercise        Exercise       @relation(fields: [exerciseId], references: [id])
-  orderIndex      Int
-  targetSets      Int?
-  targetReps      String?
-  targetWeightKg  Float?
-  notes           String?
-  sets            WorkoutSet[]
+  id             String         @id @default(cuid())
+  sessionId      String
+  session        WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseId     String
+  exercise       Exercise       @relation(fields: [exerciseId], references: [id])
+  orderIndex     Int
+  targetSets     Int?
+  targetReps     String?
+  targetWeightKg Float?
+  notes          String?
+  sets           WorkoutSet[]
 
   @@index([sessionId])
 }
@@ -544,7 +567,7 @@ model WorkoutSet {
   reps              Int?
   durationSeconds   Int?
   distanceM         Float?
-  rpe               Float?          // Rate of Perceived Exertion 1-10
+  rpe               Float? // Rate of Perceived Exertion 1-10
   restSeconds       Int?
   notes             String?
   isPersonalRecord  Boolean         @default(false)
@@ -572,10 +595,10 @@ model WeightLog {
 }
 
 model BodyMeasurement {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date         DateTime @db.Date
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
 
   // All measurements in cm
   chestCm      Float?
@@ -590,9 +613,9 @@ model BodyMeasurement {
   rightCalfCm  Float?
   shouldersCm  Float?
 
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -618,12 +641,12 @@ model ProgressPhoto {
 // ───────────────────────────────────────────────────────────────
 
 model WaterLog {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime @db.Date
-  amountMl  Float
-  loggedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date     DateTime @db.Date
+  amountMl Float
+  loggedAt DateTime @default(now())
 
   @@index([userId, date])
 }
@@ -655,9 +678,9 @@ model HabitLog {
   date          DateTime @db.Date
   stepCount     Int?
   activeMinutes Int?
-  mood          Int?     // 1-5 scale
-  energyLevel   Int?     // 1-5 scale
-  sorenessLevel Int?     // 1-5 scale
+  mood          Int? // 1-5 scale
+  energyLevel   Int? // 1-5 scale
+  sorenessLevel Int? // 1-5 scale
   notes         String?
   createdAt     DateTime @default(now())
 
@@ -698,20 +721,77 @@ model AIMessage {
 // ───────────────────────────────────────────────────────────────
 
 model Subscription {
-  id                  String           @id @default(cuid())
-  userId              String           @unique
-  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tier                SubscriptionTier @default(FREE)
-  razorpayCustomerId    String?          @unique
-  razorpaySubscriptionId String?         @unique
-  razorpayPlanId       String?
-  status              String?          // active, canceled, past_due
-  currentPeriodStart  DateTime?
-  currentPeriodEnd    DateTime?
-  cancelAtPeriodEnd   Boolean          @default(false)
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  id                     String           @id @default(cuid())
+  userId                 String           @unique
+  user                   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier                   SubscriptionTier @default(FREE)
+  razorpayCustomerId     String?          @unique
+  razorpaySubscriptionId String?          @unique
+  razorpayPlanId         String?
+  status                 String? // active, canceled, past_due
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean          @default(false)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
 
   @@index([userId])
   @@index([razorpayCustomerId])
+}
+
+// ───────────────────────────────────────────────────────────────
+// PAYMENTS (one-time Razorpay orders, each grants N days of PRO)
+// ───────────────────────────────────────────────────────────────
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+}
+
+model PaymentOrder {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?       @unique
+  amountPaise       Int
+  currency          String        @default("INR")
+  grantDays         Int
+  status            PaymentStatus @default(CREATED)
+  paidAt            DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([userId])
+}
+
+// ───────────────────────────────────────────────────────────────
+// AI USAGE & CACHE
+// ───────────────────────────────────────────────────────────────
+
+// Per-user, per-day counter used for rate limiting AI features.
+model AIUsage {
+  id      String   @id @default(cuid())
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day     DateTime @db.Date
+  feature String
+  count   Int      @default(0)
+
+  @@unique([userId, day, feature])
+}
+
+// One generated dashboard insight per user per local day.
+model AIInsight {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day       DateTime @db.Date
+  title     String
+  insight   String   @db.Text
+  action    String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@unique([userId, day])
 }

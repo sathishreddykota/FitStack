@@ -9,6 +9,9 @@ import { Search, X, Check, Plus, Loader2, Bookmark, Zap } from "lucide-react";
 import { useFoodSearch } from "@/hooks/use-food-search";
 import { useNutrition } from "@/hooks/use-nutrition";
 import { cn } from "@/lib/utils";
+import { api, errorMessage } from "@/lib/api-client";
+import { gramsPerUnit } from "@/server/nutrition/units";
+import { toast } from "sonner";
 import type { MealType, FoodSearchResult, ServingUnit } from "@/types/nutrition.types";
 
 const SERVING_UNITS: ServingUnit[] = ["g", "kg", "ml", "L", "cup", "tbsp", "tsp", "piece", "slice", "serving", "scoop"];
@@ -60,9 +63,7 @@ export function FoodSearchModal({
       const fetchMeals = async () => {
         setLoadingMeals(true);
         try {
-          const res = await fetch("/api/nutrition/saved-meals");
-          const data = await res.json();
-          setSavedMeals(data.savedMeals || []);
+          setSavedMeals(await api<any[]>("/api/nutrition/saved-meals"));
         } catch (error) {
           console.error("Failed to fetch saved meals:", error);
         } finally {
@@ -76,58 +77,45 @@ export function FoodSearchModal({
   const handleLogSavedMeal = async (id: string) => {
     setAddingMealId(id);
     try {
-      const res = await fetch(`/api/nutrition/saved-meals/${id}/log`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mealType, date }),
-      });
-      if (res.ok) {
-        onSuccess();
-        handleClose();
-      }
+      await api(`/api/nutrition/saved-meals/${id}/log`, { body: { mealType, date } });
+      toast.success("Meal logged ✓");
+      onSuccess();
+      handleClose();
     } catch (err) {
-      console.error(err);
+      toast.error(errorMessage(err, "Couldn't log that meal."));
     } finally {
       setAddingMealId(null);
     }
   };
 
   // Preview nutrition calculation
+  // Same unit → grams rules as the server, so the preview matches what gets logged.
+  const grams = selected ? (parseFloat(quantity) || 0) * gramsPerUnit(selected, unit) : 0;
   const preview = selected
     ? {
-        calories: Math.round((selected.caloriesPer100g * parseFloat(quantity || "0")) / 100),
-        proteinG: Math.round((selected.proteinPer100g * parseFloat(quantity || "0")) / 100 * 10) / 10,
-        carbsG: Math.round((selected.carbsPer100g * parseFloat(quantity || "0")) / 100 * 10) / 10,
-        fatG: Math.round((selected.fatPer100g * parseFloat(quantity || "0")) / 100 * 10) / 10,
+        grams: Math.round(grams),
+        calories: Math.round((selected.caloriesPer100g * grams) / 100),
+        proteinG: Math.round(((selected.proteinPer100g * grams) / 100) * 10) / 10,
+        carbsG: Math.round(((selected.carbsPer100g * grams) / 100) * 10) / 10,
+        fatG: Math.round(((selected.fatPer100g * grams) / 100) * 10) / 10,
       }
     : null;
 
   const handleSelectFood = useCallback((food: FoodSearchResult) => {
     setSelected(food);
-    setQuantity(food.defaultServingSizeG.toString());
-    setUnit(food.defaultServingUnit as ServingUnit);
+    const countUnit = ["piece", "slice", "serving", "scoop"].includes(food.defaultServingUnit);
+    // "1 piece" for countable foods, otherwise the default serving in grams
+    setQuantity(countUnit ? "1" : food.defaultServingSizeG.toString());
+    setUnit(countUnit ? (food.defaultServingUnit as ServingUnit) : "g");
   }, []);
 
   const handleAdd = async () => {
     if (!selected) return;
     const q = parseFloat(quantity);
-    if (isNaN(q) || q < 1) return;
+    if (isNaN(q) || q <= 0) return;
 
-    // Convert to grams for storage if unit is not 'g'
-    let quantityG = q;
-    if (unit === "kg") quantityG = q * 1000;
-    else if (unit === "ml") quantityG = q; // 1ml water ≈ 1g — close enough for most liquids
-    else if (unit === "L") quantityG = q * 1000;
-    // For volumetric units (cup, tbsp, etc.) we use default serving as 100g baseline
-    // Users can adjust per food. More precise conversion is a Phase 16+ feature.
-
-    const ok = await addFood({
-      foodId: selected.id,
-      mealType,
-      date,
-      quantityG,
-      servingUnit: unit,
-    });
+    // The server converts quantity + unit to grams (food-specific sizes first).
+    const ok = await addFood({ foodId: selected.id, mealType, date, quantity: q, unit });
 
     if (ok) {
       setSelected(null);
@@ -391,7 +379,8 @@ export function FoodSearchModal({
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    min={1}
+                    min={0.25}
+                    step="any"
                     max={5000}
                     className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-2.5 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-brand-500)] focus:outline-none transition-colors"
                     placeholder="100"
@@ -410,7 +399,7 @@ export function FoodSearchModal({
 
               {/* Quick quantity buttons */}
               <div className="flex gap-2">
-                {[50, 100, 150, 200].map((q) => (
+                {(unit === "g" || unit === "ml" ? [50, 100, 150, 200] : [0.5, 1, 2, 3]).map((q) => (
                   <button
                     key={q}
                     onClick={() => setQuantity(q.toString())}
@@ -421,10 +410,13 @@ export function FoodSearchModal({
                         : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)]",
                     )}
                   >
-                    {q}g
+                    {q}{unit === "g" || unit === "ml" ? unit : ` ${unit}`}
                   </button>
                 ))}
               </div>
+              {preview && unit !== "g" && preview.grams > 0 && (
+                <p className="text-xs text-[var(--color-text-muted)]">≈ {preview.grams} g</p>
+              )}
 
               {/* Preview nutrition */}
               {preview && parseFloat(quantity) > 0 && (
@@ -447,7 +439,7 @@ export function FoodSearchModal({
               {/* Add button */}
               <button
                 onClick={handleAdd}
-                disabled={adding || !quantity || parseFloat(quantity) < 1}
+                disabled={adding || !quantity || !(parseFloat(quantity) > 0)}
                 className={cn(
                   "w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all",
                   "bg-[var(--color-brand-600)] text-white",

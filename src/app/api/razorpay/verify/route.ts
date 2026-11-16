@@ -1,61 +1,25 @@
-import { NextResponse } from "next/server";
-import { getRequiredUser } from "@/lib/auth";
-import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
-import { SubscriptionTier } from "@prisma/client";
+import { z } from "zod";
+import { HttpError, ok, parseBody, route } from "@/server/http";
+import { requireApiUser } from "@/server/auth";
+import { isValidCheckoutSignature, markOrderPaid } from "@/server/payments";
 
-export async function POST(req: Request) {
-  try {
-    const user = await getRequiredUser();
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = await req.json();
+const body = z.object({
+  razorpay_order_id: z.string().min(1).max(64),
+  razorpay_payment_id: z.string().min(1).max(64),
+  razorpay_signature: z.string().min(1).max(256),
+});
 
-    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
-      return NextResponse.json({ error: "Missing Razorpay payment parameters" }, { status: 400 });
-    }
-
-    // Razorpay order signature verification
-    // string to hash = razorpay_order_id + "|" + razorpay_payment_id
-    const generated_signature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest("hex");
-
-    if (generated_signature !== razorpay_signature) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-    }
-
-    // Signature is valid, we can synchronously upgrade the user to PRO
-    const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(now.getDate() + 30);
-
-    await prisma.subscription.upsert({
-      where: { userId: user.id },
-      create: {
-        userId: user.id,
-        tier: SubscriptionTier.PRO,
-        razorpaySubscriptionId: razorpay_order_id,
-        status: "active",
-        currentPeriodStart: now,
-        currentPeriodEnd: thirtyDaysFromNow,
-      },
-      update: {
-        tier: SubscriptionTier.PRO,
-        razorpaySubscriptionId: razorpay_order_id,
-        status: "active",
-        currentPeriodStart: now,
-        currentPeriodEnd: thirtyDaysFromNow,
-      },
-    });
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { subscriptionTier: SubscriptionTier.PRO },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error("[RAZORPAY_VERIFY]", error);
-    return NextResponse.json({ error: error.message || "Failed to verify payment" }, { status: 500 });
+// POST /api/razorpay/verify — called by Checkout's success handler
+export const POST = route("POST /api/razorpay/verify", async (req) => {
+  const user = await requireApiUser();
+  const p = await parseBody(req, body);
+  if (!isValidCheckoutSignature(p.razorpay_order_id, p.razorpay_payment_id, p.razorpay_signature)) {
+    throw new HttpError(400, "Payment signature is invalid.", "PAYMENT");
   }
-}
+  const result = await markOrderPaid({
+    razorpayOrderId: p.razorpay_order_id,
+    razorpayPaymentId: p.razorpay_payment_id,
+    expectedUserId: user.id,
+  });
+  return ok(result);
+});

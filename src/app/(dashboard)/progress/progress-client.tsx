@@ -15,6 +15,7 @@ import { formatRelativeDate } from "@/lib/utils";
 
 interface ProgressClientProps {
   range: 7 | 30 | 90 | "all";
+  today: string;
   weightData: {
     logs: { date: Date; weightKg: number }[];
     currentWeight: number | null;

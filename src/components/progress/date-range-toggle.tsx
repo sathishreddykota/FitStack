@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type { DateRange } from "@/lib/services/progress-service";
+type DateRange = 7 | 30 | 90 | "all";
 
 const RANGES: { value: DateRange; label: string }[] = [
   { value: 7, label: "7D" },

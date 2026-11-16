@@ -1,93 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { PrismaClient } from "@prisma/client";
+import { ok, parseBody, route } from "@/server/http";
+import { requireApiUser } from "@/server/auth";
+import { createSavedMeal, listSavedMeals, saveMealFromLog } from "@/server/nutrition/service";
+import { savedMealSchema } from "@/server/schemas";
 
-const prisma = new PrismaClient();
+export const GET = route("GET /api/nutrition/saved-meals", async () => {
+  const user = await requireApiUser();
+  return ok(await listSavedMeals(user.id));
+});
 
-export async function GET(req: NextRequest) {
-  try {
-    const { userId: clerkId } = await auth();
-    if (!clerkId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({ where: { clerkId } });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const savedMeals = await prisma.savedMeal.findMany({
-      where: { userId: user.id },
-      include: {
-        items: {
-          include: {
-            food: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return NextResponse.json({ savedMeals });
-  } catch (error: any) {
-    console.error("[GET_SAVED_MEALS]", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const { userId: clerkId } = await auth();
-    if (!clerkId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({ where: { clerkId } });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const body = await req.json();
-    const { name, description, items } = body;
-
-    if (!name || !items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
-        { error: "Name and items are required" },
-        { status: 400 }
-      );
-    }
-
-    const savedMeal = await prisma.savedMeal.create({
-      data: {
-        name,
-        description,
-        userId: user.id,
-        items: {
-          create: items.map((item: any) => ({
-            foodId: item.foodId,
-            quantityG: item.quantityG,
-            servingUnit: item.servingUnit || "g",
-          })),
-        },
-      },
-      include: {
-        items: {
-          include: {
-            food: true,
-          },
-        },
-      },
-    });
-
-    return NextResponse.json({ savedMeal });
-  } catch (error: any) {
-    console.error("[POST_SAVED_MEAL]", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
+export const POST = route("POST /api/nutrition/saved-meals", async (req) => {
+  const user = await requireApiUser();
+  const body = await parseBody(req, savedMealSchema);
+  const saved =
+    "fromLog" in body
+      ? await saveMealFromLog(user.id, { name: body.name, ...body.fromLog })
+      : await createSavedMeal(user.id, body);
+  return ok(saved, { status: 201 });
+});

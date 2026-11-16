@@ -1,176 +1,85 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { api, errorMessage } from "@/lib/api-client";
 import type { MealType, ServingUnit } from "@/types/nutrition.types";
 
 // ─────────────────────────────────────────────
-// useNutrition — client-side meal operations
+// useNutrition — client-side meal operations.
+// Calls the API, toasts the result, then runs onSuccess (usually router.refresh).
 // ─────────────────────────────────────────────
-// Calls the API routes and triggers router refresh
-// for server component re-rendering.
 
 interface AddFoodParams {
   foodId: string;
   mealType: MealType;
   date: string; // YYYY-MM-DD
-  quantityG: number;
-  servingUnit: ServingUnit;
+  quantity: number;
+  unit: ServingUnit;
   notes?: string;
 }
 
 interface UpdateItemParams {
   itemId: string;
-  quantityG: number;
-  servingUnit: ServingUnit;
+  quantity: number;
+  unit: ServingUnit;
   notes?: string;
 }
 
 interface QuickAddParams {
   mealType: MealType;
-  date: string; // YYYY-MM-DD
+  date: string;
   calories: number;
   proteinG: number;
   carbsG: number;
   fatG: number;
+  label?: string;
 }
 
 export function useNutrition(onSuccess?: () => void) {
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const addFood = useCallback(
-    async (params: AddFoodParams): Promise<boolean> => {
+  const run = useCallback(
+    async (fn: () => Promise<unknown>, success: string, failure: string): Promise<boolean> => {
       setIsSubmitting(true);
       try {
-        const res = await fetch("/api/nutrition/meals", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(params),
-        });
-
-        const json = await res.json();
-        if (!json.success) {
-          toast.error(json.error ?? "Failed to add food.");
-          return false;
-        }
-
-        toast.success("Food added ✓");
-        startTransition(() => {
-          // Trigger re-render of server components on the page
-          if (onSuccess) onSuccess();
-        });
+        await fn();
+        toast.success(success);
+        startTransition(() => onSuccess?.());
         return true;
-      } catch {
-        toast.error("Network error. Please try again.");
+      } catch (err) {
+        toast.error(errorMessage(err, failure));
         return false;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [onSuccess, startTransition],
+    [onSuccess],
+  );
+
+  const addFood = useCallback(
+    (p: AddFoodParams) => run(() => api("/api/nutrition/meals", { body: p }), "Food added ✓", "Failed to add food."),
+    [run],
   );
 
   const updateItem = useCallback(
-    async (params: UpdateItemParams): Promise<boolean> => {
-      setIsSubmitting(true);
-      try {
-        const res = await fetch(`/api/nutrition/meals/${params.itemId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            quantityG: params.quantityG,
-            servingUnit: params.servingUnit,
-            notes: params.notes,
-          }),
-        });
-
-        const json = await res.json();
-        if (!json.success) {
-          toast.error(json.error ?? "Failed to update item.");
-          return false;
-        }
-
-        toast.success("Updated ✓");
-        startTransition(() => {
-          if (onSuccess) onSuccess();
-        });
-        return true;
-      } catch {
-        toast.error("Network error. Please try again.");
-        return false;
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [onSuccess, startTransition],
+    ({ itemId, ...body }: UpdateItemParams) =>
+      run(() => api(`/api/nutrition/meals/${itemId}`, { method: "PATCH", body }), "Updated ✓", "Failed to update item."),
+    [run],
   );
 
   const quickAdd = useCallback(
-    async (params: QuickAddParams): Promise<boolean> => {
-      setIsSubmitting(true);
-      try {
-        const res = await fetch("/api/nutrition/meals/quick-add", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(params),
-        });
-
-        const json = await res.json();
-        if (!json.success) {
-          toast.error(json.error ?? "Failed to quick add macros.");
-          return false;
-        }
-
-        toast.success("Macros added ✓");
-        startTransition(() => {
-          if (onSuccess) onSuccess();
-        });
-        return true;
-      } catch {
-        toast.error("Network error. Please try again.");
-        return false;
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [onSuccess, startTransition],
+    (p: QuickAddParams) =>
+      run(() => api("/api/nutrition/meals/quick-add", { body: p }), "Macros added ✓", "Failed to quick add."),
+    [run],
   );
 
   const deleteItem = useCallback(
-    async (itemId: string): Promise<boolean> => {
-      setIsSubmitting(true);
-      try {
-        const res = await fetch(`/api/nutrition/meals/${itemId}`, {
-          method: "DELETE",
-        });
-
-        const json = await res.json();
-        if (!json.success) {
-          toast.error(json.error ?? "Failed to remove item.");
-          return false;
-        }
-
-        toast.success("Removed");
-        startTransition(() => {
-          if (onSuccess) onSuccess();
-        });
-        return true;
-      } catch {
-        toast.error("Network error. Please try again.");
-        return false;
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [onSuccess, startTransition],
+    (itemId: string) =>
+      run(() => api(`/api/nutrition/meals/${itemId}`, { method: "DELETE" }), "Removed", "Failed to remove item."),
+    [run],
   );
 
-  return {
-    addFood,
-    updateItem,
-    deleteItem,
-    quickAdd,
-    isLoading: isSubmitting || isPending,
-  };
+  return { addFood, updateItem, deleteItem, quickAdd, isLoading: isSubmitting || isPending };
 }

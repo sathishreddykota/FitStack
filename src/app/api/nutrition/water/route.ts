@@ -1,32 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getInternalUserId } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+import { ok, parseBody, parseQuery, route } from "@/server/http";
+import { requireApiUser, todayOf } from "@/server/auth";
+import { dateStringSchema } from "@/server/dates";
+import { logWater, waterForDay } from "@/server/tracking";
+import { waterLogSchema } from "@/server/schemas";
 
-export async function POST(req: NextRequest) {
-  try {
-    const userId = await getInternalUserId();
-    const { amountMl, date } = await req.json();
+// GET /api/nutrition/water?date=YYYY-MM-DD
+export const GET = route("GET /api/nutrition/water", async (req) => {
+  const user = await requireApiUser();
+  const { date } = parseQuery(req, z.object({ date: dateStringSchema.optional() }));
+  return ok(await waterForDay(user.id, date ?? todayOf(user).str));
+});
 
-    if (!amountMl || typeof amountMl !== "number") {
-      return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 400 });
-    }
-
-    let logDate = new Date();
-    if (date) {
-      logDate = new Date(date);
-    }
-
-    const waterLog = await prisma.waterLog.create({
-      data: {
-        userId,
-        amountMl,
-        date: logDate,
-      },
-    });
-
-    return NextResponse.json({ success: true, data: waterLog });
-  } catch (error) {
-    console.error("[POST /api/nutrition/water]", error);
-    return NextResponse.json({ success: false, error: "Failed to log water" }, { status: 500 });
-  }
-}
+// POST /api/nutrition/water { amountMl, date? }
+export const POST = route("POST /api/nutrition/water", async (req) => {
+  const user = await requireApiUser();
+  const { amountMl, date } = await parseBody(req, waterLogSchema);
+  return ok(await logWater(user.id, date ?? todayOf(user).str, amountMl), { status: 201 });
+});

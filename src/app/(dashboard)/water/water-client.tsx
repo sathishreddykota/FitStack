@@ -9,6 +9,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api-client";
 
 interface WaterClientProps {
   initialData: {
@@ -32,12 +33,7 @@ export function WaterClient({ initialData, trendsData }: WaterClientProps) {
 
   const handleAddWater = async (amountMl: number) => {
     try {
-      const res = await fetch("/api/nutrition/water", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountMl }),
-      });
-      if (!res.ok) throw new Error("Failed to log water");
+      await api("/api/nutrition/water", { body: { amountMl } });
       router.refresh();
       return true;
     } catch (error) {
@@ -49,10 +45,7 @@ export function WaterClient({ initialData, trendsData }: WaterClientProps) {
   const handleDeleteWater = async (id: string) => {
     try {
       setIsDeleting(id);
-      const res = await fetch(`/api/nutrition/water/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete water log");
+      await api(`/api/nutrition/water/${id}`, { method: "DELETE" });
       router.refresh();
       toast.success("Log removed");
     } catch (error) {

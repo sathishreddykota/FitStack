@@ -1,29 +1,11 @@
-import { NextResponse } from "next/server";
-import { getRequiredUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { startOfDay } from "date-fns";
+import { ok, parseBody, route } from "@/server/http";
+import { requireApiUser, todayOf } from "@/server/auth";
+import { createSession } from "@/server/workout/service";
+import { createSessionSchema } from "@/server/workout/schemas";
 
-export async function POST(req: Request) {
-  try {
-    const user = await getRequiredUser();
-    const today = startOfDay(new Date());
-
-    // Create a new ad-hoc session
-    const session = await prisma.workoutSession.create({
-      data: {
-        userId: user.id,
-        name: "Custom Workout",
-        dayType: "CUSTOM",
-        date: today,
-        status: "IN_PROGRESS",
-        startedAt: new Date(),
-        originalDate: today,
-      }
-    });
-
-    return NextResponse.json({ session });
-  } catch (error: any) {
-    console.error("Failed to create custom session:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+// POST /api/workout/session — start a custom (unplanned) workout. Free.
+export const POST = route("POST /api/workout/session", async (req) => {
+  const user = await requireApiUser();
+  const input = await parseBody(req, createSessionSchema);
+  return ok(await createSession(user.id, { ...input, date: input.date ?? todayOf(user).str }), { status: 201 });
+});

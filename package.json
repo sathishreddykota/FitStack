@@ -14,7 +14,9 @@
     "db:migrate:prod": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.70",
@@ -35,6 +37,7 @@
     "react-markdown": "^10.1.0",
     "recharts": "^2.15.3",
     "remark-gfm": "^4.0.1",
+    "server-only": "^0.0.1",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.1",
     "zod": "^3.25.67",
@@ -52,9 +55,15 @@
     "prisma": "^6.8.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+  "allowScripts": {
+    "@clerk/shared@3.47.8": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true,
+    "prisma@6.19.3": true,
+    "unrs-resolver@1.12.2": true
   }
 }

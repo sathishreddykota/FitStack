@@ -10,7 +10,7 @@ export default function PrivacyPage() {
     <div className="max-w-4xl mx-auto py-16 px-6">
       <h1 className="text-4xl font-bold tracking-tight mb-8">Privacy Policy</h1>
       <div className="prose prose-invert max-w-none text-text-secondary space-y-6">
-        <p><strong>Last Updated: {new Date().toLocaleDateString()}</strong></p>
+        <p><strong>Last updated: 16 November 2026</strong></p>
 
         <h2 className="text-2xl font-semibold text-text-primary mt-8">1. Information We Collect</h2>
         <p>When you use FitStack, we collect data you provide directly to us including: account information (name, email), physical characteristics (weight, height, age), and activity data (workouts, meals, sleep, water intake).</p>

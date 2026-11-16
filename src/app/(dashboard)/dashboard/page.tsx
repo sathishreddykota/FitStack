@@ -1,15 +1,13 @@
-import { getRequiredUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOnboardedUser, todayOf } from "@/server/auth";
+import { toDbDate } from "@/server/dates";
+import { dailyTotals, getDayMeals } from "@/server/nutrition/service";
+import { recoveryForDay, waterForDay } from "@/server/tracking";
+import { getNutritionAnalytics, getRecentPRs, getWeightAnalytics, getWorkoutAnalytics } from "@/server/progress";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { AIInsightCard } from "@/components/dashboard/ai-insight-card";
 import { ProgressSummaryCard } from "@/components/progress/progress-summary-card";
-import { 
-  getWeightAnalytics, 
-  getNutritionAnalytics, 
-  getWorkoutAnalytics, 
-  getRecentPRs 
-} from "@/lib/services/progress-service";
 import {
   Flame,
   Beef,
@@ -23,7 +21,7 @@ import {
   ArrowRight,
   Leaf,
 } from "lucide-react";
-import { formatDate, formatRelativeDate } from "@/lib/utils";
+import { formatRelativeDate } from "@/lib/utils";
 import { GOAL_LABELS, TRAINING_STYLE_LABELS } from "@/lib/constants";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -33,106 +31,75 @@ export const metadata: Metadata = {
   description: "Your FitStack daily overview",
 };
 
+/** Adequate fibre intake (ICMR-NIN guidance ≈ 30 g/day for adults). */
+const FIBER_TARGET_G = 30;
+
 // ─────────────────────────────────────────────
-// Dashboard Home — Server Component
+// Dashboard Home — Server Component. "Today" is the user's local day.
 // ─────────────────────────────────────────────
 
 export default async function DashboardPage() {
-  const user = await getRequiredUser();
+  const user = await requireOnboardedUser();
   const profile = user.profile;
+  const today = todayOf(user).str;
 
-  const now = new Date();
-  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-
-  // Fetch today's data in parallel
   const [
-    todayMeals, 
-    todayWater, 
-    lastWeightLog, 
+    todayMeals,
+    todayWater,
+    todayRecovery,
+    lastWeightLog,
     latestWorkout,
     weightAnalytics,
     nutritionAnalytics,
     workoutAnalytics,
-    recentPRs
+    recentPRs,
   ] = await Promise.all([
-    // Today's meals with items
-    prisma.meal.findMany({
-      where: { userId: user.id, date: today },
-      include: { items: true },
-    }),
-
-    // Today's water intake
-    prisma.waterLog.findMany({
-      where: { userId: user.id, date: today },
-    }),
-
-    // Most recent weight log
-    prisma.weightLog.findFirst({
-      where: { userId: user.id },
-      orderBy: { date: "desc" },
-    }),
-
-    // Most recent workout session (past or today)
+    getDayMeals(user.id, today),
+    waterForDay(user.id, today),
+    recoveryForDay(user.id, today),
+    prisma.weightLog.findFirst({ where: { userId: user.id }, orderBy: { date: "desc" } }),
     prisma.workoutSession.findFirst({
-      where: { userId: user.id, date: { lte: today } },
+      where: { userId: user.id, date: { lte: toDbDate(today) }, status: { in: ["COMPLETED", "IN_PROGRESS"] } },
       orderBy: { date: "desc" },
       include: { exercises: { select: { id: true } } },
     }),
-
-    // Progress analytics (7 day view for dashboard)
-    getWeightAnalytics(user.id, 7),
-    getNutritionAnalytics(user.id, 7),
-    getWorkoutAnalytics(user.id, 7),
+    getWeightAnalytics(user.id, 7, today),
+    getNutritionAnalytics(user.id, 7, today),
+    getWorkoutAnalytics(user.id, 7, today),
     getRecentPRs(user.id),
   ]);
 
-  // Calculate today's nutrition totals
-  const todayCalories = todayMeals.reduce(
-    (sum: number, meal: { items: { calories: number }[] }) =>
-      sum + meal.items.reduce((s: number, item: { calories: number }) => s + item.calories, 0),
-    0,
-  );
-  const todayProtein = todayMeals.reduce(
-    (sum: number, meal: { items: { proteinG: number }[] }) =>
-      sum + meal.items.reduce((s: number, item: { proteinG: number }) => s + item.proteinG, 0),
-    0,
-  );
-  const todayCarbs = todayMeals.reduce(
-    (sum: number, meal: { items: { carbsG: number }[] }) =>
-      sum + meal.items.reduce((s: number, item: { carbsG: number }) => s + item.carbsG, 0),
-    0,
-  );
-  const todayFiber = todayMeals.reduce(
-    (sum: number, meal: { items: { fiberG: number | null }[] }) =>
-      sum + meal.items.reduce((s: number, item: { fiberG: number | null }) => s + (item.fiberG ?? 0), 0),
-    0,
-  );
-  const todayWaterMl = todayWater.reduce((sum: number, log: { amountMl: number }) => sum + log.amountMl, 0);
+  const totals = dailyTotals(todayMeals);
+  const todayCalories = totals.calories;
+  const todayProtein = totals.proteinG;
+  const todayCarbs = totals.carbsG;
+  const todayFiber = totals.fiberG;
+  const todayWaterMl = todayWater.totalMl;
 
-  // Targets from profile (with fallbacks)
-  const calorieTarget = profile?.dailyCalorieTarget ?? null;
-  const proteinTarget = profile?.dailyProteinTargetG ?? null;
-  const carbsTarget = profile?.dailyCarbsTargetG ?? null;
-  const fiberTarget = proteinTarget ? Math.round(proteinTarget / 4) : null;
-  const waterTargetL = profile?.dailyWaterTargetL ?? null;
+  const calorieTarget = profile.dailyCalorieTarget;
+  const proteinTarget = profile.dailyProteinTargetG;
+  const carbsTarget = profile.dailyCarbsTargetG;
+  const fiberTarget = FIBER_TARGET_G;
+  const waterTargetL = profile.dailyWaterTargetL;
 
-  // Weight data
-  const currentWeight = lastWeightLog?.weightKg ?? profile?.currentWeightKg ?? null;
-  const targetWeight = profile?.targetWeightKg ?? null;
+  const currentWeight = lastWeightLog?.weightKg ?? profile.currentWeightKg ?? null;
+  const targetWeight = profile.targetWeightKg ?? null;
 
   const hasAnyMealData = todayMeals.length > 0;
-  const hasWaterData = todayWater.length > 0;
+  const hasWaterData = todayWater.logs.length > 0;
+  const sleepMin = todayRecovery.sleep?.durationMinutes ?? null;
+  const habits = todayRecovery.habits;
 
   return (
     <div className="space-y-8 animate-fade-in">
       {/* ── Page Header ─────────────────────────── */}
       <div className="flex flex-col gap-2 pt-4 pb-8 border-b border-[var(--color-border)] mb-8">
         <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-[var(--color-text-primary)]">
-          Good {getGreeting()},<br />
+          Good {getGreeting(profile.timezone)},<br />
           <span className="text-[var(--color-brand-500)]">{user.name?.split(" ")[0] ?? "there"}</span>.
         </h1>
         <p className="mt-4 text-base font-medium text-[var(--color-text-secondary)]">
-          {formatDate(new Date())} <span className="mx-2 text-[var(--color-border)]">|</span>{" "}
+          {new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(toDbDate(today))} <span className="mx-2 text-[var(--color-border)]">|</span>{" "}
           {profile?.fitnessGoal ? GOAL_LABELS[profile.fitnessGoal as keyof typeof GOAL_LABELS] : "Let's get to work"}
           {calorieTarget && (
             <>
@@ -369,13 +336,10 @@ export default async function DashboardPage() {
         calorieTarget={calorieTarget}
       />
 
-      {/* ── Recovery Placeholder ──────────────────── */}
+      {/* ── Recovery ──────────────────────────────── */}
       <section aria-labelledby="recovery-heading" className="pt-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-2 border-b border-[var(--color-border-subtle)] gap-4">
-          <h2
-            id="recovery-heading"
-            className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]"
-          >
+          <h2 id="recovery-heading" className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
             Recovery
           </h2>
           <Link
@@ -388,19 +352,21 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard
             label="Sleep"
-            value="—"
+            value={sleepMin != null ? `${Math.floor(sleepMin / 60)}h ${sleepMin % 60}m` : "—"}
+            subtext={todayRecovery.sleep?.quality ? `Quality: ${todayRecovery.sleep.quality.toLowerCase()}` : undefined}
             icon={Moon}
             iconColor="var(--color-info-400)"
-            empty
+            empty={sleepMin == null}
             emptyMessage="Log sleep to track recovery"
           />
           <StatCard
             label="Mood & Energy"
-            value="—"
+            value={habits?.energyLevel ? `${habits.energyLevel}/5` : "—"}
+            subtext={habits ? `Mood ${habits.mood ?? "—"}/5 · Soreness ${habits.sorenessLevel ?? "—"}/5` : undefined}
             icon={Activity}
             iconColor="var(--color-success-400)"
-            empty
-            emptyMessage="Track daily habits in Recovery"
+            empty={!habits}
+            emptyMessage="Track daily readiness in Recovery"
           />
         </div>
       </section>
@@ -412,8 +378,8 @@ export default async function DashboardPage() {
 // Helper: greeting based on time
 // ─────────────────────────────────────────────
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
+function getGreeting(timezone: string): string {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: timezone }).format(new Date()));
   if (hour < 12) return "morning";
   if (hour < 17) return "afternoon";
   return "evening";

@@ -1,388 +1,301 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Send, Bot, AlertCircle, Mic, History, X, Plus, Clock } from "lucide-react";
-import { ChatMessage } from "./components/chat-message";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { AlertCircle, Bot, Clock, History, Mic, Plus, Send, Square, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { api, errorMessage } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import { useSpeech } from "@/hooks/use-speech";
+import { ChatMessage } from "./components/chat-message";
 
-export function CoachClient() {
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  
-  const [messages, setMessages] = useState<any[]>([]);
+interface Conversation {
+  id: string;
+  title: string | null;
+  updatedAt: string;
+  messageCount: number;
+}
+
+const SUGGESTIONS = [
+  "How did I do this week?",
+  "What should I eat for dinner to hit my protein?",
+  "Log 2 boiled eggs and a banana for breakfast",
+  "My bench has stalled — what should I change?",
+];
+
+const TOOL_LABELS: Record<string, [running: string, done: string]> = {
+  getToday: ["Checking today's log…", "Checked today's log"],
+  getHistory: ["Reviewing your recent data…", "Reviewed your recent data"],
+  getUpcomingWorkouts: ["Looking at your schedule…", "Checked your schedule"],
+  searchFoods: ["Searching foods…", "Searched foods"],
+  logFood: ["Logging food…", "Food logged ✓"],
+  logWater: ["Logging water…", "Water logged ✓"],
+  logWeight: ["Logging weight…", "Weight logged ✓"],
+};
+
+const newId = () => (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`).replace(/-/g, "");
+
+function ChatPane({ id, initialMessages, onActivity }: { id: string; initialMessages: UIMessage[]; onActivity: () => void }) {
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingHistory, setIsFetchingHistory] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isListening, setIsListening] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+  const speech = useSpeech(setInput);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
+  const { messages, sendMessage, status, error, stop } = useChat({
+    id,
+    messages: initialMessages,
+    transport: new DefaultChatTransport({
+      api: "/api/coach/chat",
+      // Only the new message is sent; the server loads history from the database.
+      prepareSendMessagesRequest: ({ id: chatId, messages: msgs }) => ({ body: { id: chatId, message: msgs[msgs.length - 1] } }),
+    }),
+    onFinish: onActivity,
+  });
+
+  const busy = status === "submitted" || status === "streaming";
 
   useEffect(() => {
-    async function fetchHistory() {
-      try {
-        const res = await fetch("/api/coach/chat/history");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.conversations && data.conversations.length > 0) {
-            setConversations(data.conversations);
-            // Select the most recent one automatically
-            setActiveConversationId(data.conversations[0].id);
-            if (data.conversations[0].messages.length > 0) {
-              setMessages(data.conversations[0].messages);
-            } else {
-              setMessages([{
-                id: "1", role: "assistant", content: "Hi! I'm your FitStack AI Coach. I have your fitness profile and goals ready. How can I help you today?"
-              }]);
-            }
-          } else {
-            // No history at all
-            setMessages([{
-              id: "1", role: "assistant", content: "Hi! I'm your FitStack AI Coach. I have your fitness profile and goals ready. How can I help you today?"
-            }]);
-          }
-        }
-      } catch (e) {
-        console.error(e);
-        setMessages([{
-          id: "1", role: "assistant", content: "Hi! I'm your FitStack AI Coach. I have your fitness profile and goals ready. How can I help you today?"
-        }]);
-      } finally {
-        setIsFetchingHistory(false);
-      }
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, status]);
+
+  const send = (text: string) => {
+    const t = text.trim();
+    if (!t || busy) return;
+    speech.stop();
+    sendMessage({ text: t });
+    setInput("");
+  };
+
+  return (
+    <>
+      <div className="flex-1 space-y-6 overflow-y-auto pb-4 pr-1">
+        {messages.length === 0 && (
+          <div className="mx-auto max-w-lg space-y-4 pt-8 text-center">
+            <Bot className="mx-auto h-12 w-12 text-[var(--color-brand-400)]" />
+            <p className="text-[var(--color-text-secondary)]">
+              I can see your food, workouts, weight and recovery. Ask me anything — or tell me what you ate and I&apos;ll log it.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => send(s)}
+                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-3 text-left text-sm text-[var(--color-text-primary)] hover:border-[var(--color-brand-400)]"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.map((m) => (
+          <div key={m.id} className="space-y-2">
+            {m.parts.map((part, i) => {
+              if (part.type.startsWith("tool-")) {
+                const name = part.type.slice(5);
+                const state = (part as { state?: string }).state;
+                const label = TOOL_LABELS[name];
+                if (!label) return null;
+                return (
+                  <p key={i} className="ml-14 text-xs font-medium text-[var(--color-text-muted)]">
+                    {state === "output-available" ? label[1] : state === "output-error" ? `${name} failed` : label[0]}
+                  </p>
+                );
+              }
+              return null;
+            })}
+            {(() => {
+              const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+              return text ? <ChatMessage role={m.role} content={text} /> : null;
+            })()}
+          </div>
+        ))}
+
+        {status === "submitted" && (
+          <div className="flex items-center gap-1 pl-14">
+            {[0, 150, 300].map((d) => (
+              <span key={d} className="h-2 w-2 animate-bounce rounded-full bg-[var(--color-brand-400)]" style={{ animationDelay: `${d}ms` }} />
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className="flex items-start gap-3 rounded-xl border border-[var(--color-error-400)]/30 bg-[var(--color-error-400)]/10 p-4">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-error-400)]" />
+            <p className="text-sm text-[var(--color-text-primary)]">{errorFromChat(error)}</p>
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          send(input);
+        }}
+        className="mx-auto flex w-full max-w-4xl items-center gap-2 pt-3"
+      >
+        <div className="relative flex-1">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask about your training, food or progress…"
+            maxLength={2000}
+            className="w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)] py-4 pl-6 pr-14 text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-brand-400)] focus:outline-none"
+          />
+          {busy ? (
+            <button type="button" onClick={stop} aria-label="Stop" className="absolute bottom-2 right-2 top-2 rounded-full bg-[var(--color-surface-3)] p-3 text-[var(--color-text-primary)]">
+              <Square className="h-4 w-4" />
+            </button>
+          ) : (
+            <button type="submit" disabled={!input.trim()} aria-label="Send" className="absolute bottom-2 right-2 top-2 rounded-full bg-[var(--color-brand-500)] p-3 text-white disabled:opacity-50">
+              <Send className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        {speech.supported && (
+          <button
+            type="button"
+            onClick={() => (speech.listening ? speech.stop() : speech.start(input, (m) => toast.error(m)))}
+            aria-label={speech.listening ? "Stop listening" : "Speak"}
+            className={cn(
+              "shrink-0 rounded-full border p-4",
+              speech.listening ? "animate-pulse border-red-500/30 bg-red-500/10 text-red-500" : "border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)]",
+            )}
+          >
+            <Mic className="h-5 w-5" />
+          </button>
+        )}
+      </form>
+      <p className="mt-2 text-center text-[11px] text-[var(--color-text-disabled)]">
+        FitStack Coach can make mistakes and isn&apos;t a doctor.
+      </p>
+    </>
+  );
+}
+
+/** useChat surfaces the server's JSON error body as the message text. */
+function errorFromChat(error: Error) {
+  try {
+    const parsed = JSON.parse(error.message) as { error?: string };
+    if (parsed.error) return parsed.error;
+  } catch {
+    /* plain text */
+  }
+  return error.message || "The coach is unavailable right now. Please try again.";
+}
+
+export function CoachClient() {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [active, setActive] = useState<{ id: string; messages: UIMessage[] }>(() => ({ id: newId(), messages: [] }));
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  const refreshList = useCallback(async () => {
+    try {
+      setConversations(await api<Conversation[]>("/api/coach/conversations"));
+    } catch {
+      /* non-critical */
     }
-    fetchHistory();
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading, activeConversationId]);
-
-  const handleNewChat = () => {
-    setActiveConversationId(null);
-    setMessages([{
-      id: "1", role: "assistant", content: "Hi! I'm your FitStack AI Coach. I have your fitness profile and goals ready. How can I help you today?"
-    }]);
-    setIsSidebarOpen(false);
-  };
-
-  const selectConversation = (conv: any) => {
-    setActiveConversationId(conv.id);
-    if (conv.messages.length > 0) {
-      setMessages(conv.messages);
-    } else {
-      setMessages([{
-        id: "1", role: "assistant", content: "Hi! I'm your FitStack AI Coach. I have your fitness profile and goals ready. How can I help you today?"
-      }]);
-    }
-    setIsSidebarOpen(false);
-  };
-
-  const toggleVoiceInput = () => {
-    if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
-      return;
-    }
-
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      toast.error("Voice recognition is not supported in this browser.");
-      return;
-    }
-
-    // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    let originalInput = input;
-    if (originalInput && !originalInput.endsWith(' ')) {
-      originalInput += ' ';
-    }
-
-    recognition.onstart = () => {
-      setIsListening(true);
-      toast.info("Listening... Click mic again to stop.");
+    let cancelled = false;
+    api<Conversation[]>("/api/coach/conversations")
+      .then((list) => !cancelled && setConversations(list))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
-      }
-
-      originalInput += finalTranscript;
-      setInput(originalInput + interimTranscript);
-    };
-
-    recognition.onerror = (event: any) => {
-      if (event.error !== 'no-speech') {
-        toast.error("Voice recognition failed: " + event.error);
-      }
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-    if (!input.trim() || isLoading) return;
-
-    const userMessage = { id: Date.now().toString(), role: "user", content: input };
-    const newMessages = [...messages, userMessage];
-    
-    setMessages(newMessages);
-    setInput("");
-    setIsLoading(true);
-    setError(null);
-
+  const open = async (id: string) => {
     try {
-      const res = await fetch("/api/coach/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          messages: newMessages,
-          conversationId: activeConversationId 
-        }),
-      });
+      setActive({ id, messages: await api<UIMessage[]>(`/api/coach/conversations/${id}`) });
+      setHistoryOpen(false);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to fetch response");
-      }
-
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder("utf-8");
-      
-      let aiResponseContent = "";
-      const aiMessageId = (Date.now() + 1).toString();
-
-      setMessages((prev) => [...prev, { id: aiMessageId, role: "assistant", content: "" }]);
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          aiResponseContent += chunk;
-          setMessages((prev) => 
-            prev.map((msg) => 
-              msg.id === aiMessageId ? { ...msg, content: aiResponseContent } : msg
-            )
-          );
-        }
-      }
-    } catch (err: any) {
-      setError(err.message);
-      setMessages((prev) => prev.filter(m => m.content !== ""));
-    } finally {
-      setIsLoading(false);
-      // We should technically refresh history to get the newly created conversation ID if it was a new chat.
-      // But we can do that in the background.
-      if (!activeConversationId) {
-        fetch("/api/coach/chat/history").then(r => r.json()).then(data => {
-          if (data.conversations && data.conversations.length > 0) {
-            setConversations(data.conversations);
-            setActiveConversationId(data.conversations[0].id);
-          }
-        });
-      }
+  const remove = async (id: string) => {
+    try {
+      await api(`/api/coach/conversations/${id}`, { method: "DELETE" });
+      setConversations((c) => c.filter((x) => x.id !== id));
+      if (active.id === id) setActive({ id: newId(), messages: [] });
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] w-full animate-fade-in relative overflow-hidden">
-      
-      {/* ── Header ──────────────────────── */}
-      <div className="flex-shrink-0 flex items-center justify-between pb-4 border-b border-[var(--color-border)] mb-4 relative z-10 bg-[var(--color-background)]">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-            <Bot className="h-7 w-7 text-[var(--color-brand-400)]" /> AI Coach
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Your personalized fitness assistant.</p>
-        </div>
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-brand-400)] transition-colors"
-        >
-          <History className="h-4 w-4" />
-          <span className="text-sm font-medium hidden sm:inline">History</span>
-        </button>
-      </div>
-
-      {/* ── Chat Area ──────────────────────── */}
-      <div className="flex-1 overflow-y-auto pr-4 space-y-6 scrollbar-thin scrollbar-thumb-[var(--color-surface-3)] scrollbar-track-transparent pb-4">
-        {isFetchingHistory ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-brand-500)]"></div>
-          </div>
-        ) : (
-          <>
-            {messages.map((message) => (
-              <ChatMessage key={message.id} role={message.role} content={message.content} />
-            ))}
-            
-            {isLoading && messages[messages.length - 1]?.role === "user" && (
-              <div className="flex gap-4 w-full flex-row animate-pulse">
-                <div className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center border bg-[var(--color-brand-500)]/10 border-[var(--color-brand-400)]/20 text-[var(--color-brand-400)]">
-                  <Bot className="h-5 w-5" />
-                </div>
-                <div className="flex items-center gap-1 p-4">
-                  <div className="w-2 h-2 rounded-full bg-[var(--color-brand-400)] animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div className="w-2 h-2 rounded-full bg-[var(--color-brand-400)] animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <div className="w-2 h-2 rounded-full bg-[var(--color-brand-400)] animate-bounce" style={{ animationDelay: "300ms" }} />
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="rounded-xl border border-[var(--color-error-400)]/30 bg-[var(--color-error-400)]/10 p-4 flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-[var(--color-error-400)] mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-[var(--color-text-primary)]">
-                  <p className="font-bold text-[var(--color-error-400)] mb-1">Error communicating with AI</p>
-                  {error}
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} className="h-4" />
-          </>
-        )}
-      </div>
-
-      {/* ── Input Area ──────────────────────── */}
-      <div className="flex-shrink-0 pt-4 mt-auto">
-        <form 
-          onSubmit={handleSubmit}
-          className="relative flex items-center w-full max-w-4xl mx-auto"
-        >
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything about your fitness goals, macros, or workouts..."
-              className="w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)] py-4 pl-6 pr-14 text-[15px] text-[var(--color-text-primary)] shadow-sm focus:border-[var(--color-brand-400)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-400)] transition-all placeholder:text-[var(--color-text-muted)]"
-              disabled={isLoading}
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="absolute right-2 top-2 bottom-2 rounded-full bg-[var(--color-brand-500)] p-3 text-white transition-all hover:bg-[var(--color-brand-600)] active:scale-95 disabled:opacity-50 flex items-center justify-center"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </div>
-          
+    <div className="relative flex h-[calc(100dvh-120px)] w-full flex-col overflow-hidden">
+      <div className="mb-4 flex shrink-0 items-center justify-between border-b border-[var(--color-border)] pb-4">
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--color-text-primary)]">
+          <Bot className="h-7 w-7 text-[var(--color-brand-400)]" /> Coach
+        </h1>
+        <div className="flex gap-2">
           <button
-            type="button"
-            onClick={toggleVoiceInput}
-            disabled={isLoading}
-            className={cn(
-              "flex-shrink-0 ml-2 rounded-full p-4 flex items-center justify-center transition-all border",
-              isListening 
-                ? "bg-red-500/10 text-red-500 border-red-500/30 animate-pulse" 
-                : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-brand-400)]"
-            )}
-            title={isListening ? "Stop listening" : "Speak"}
+            onClick={() => setActive({ id: newId(), messages: [] })}
+            aria-label="New chat"
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-2 text-[var(--color-text-primary)]"
           >
-            <Mic className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
           </button>
-        </form>
-        <p className="text-center text-[11px] text-[var(--color-text-disabled)] mt-3">
-          AI Coach can make mistakes. Consider verifying important fitness advice.
-        </p>
+          <button
+            onClick={() => {
+              refreshList();
+              setHistoryOpen(true);
+            }}
+            className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-[var(--color-text-primary)]"
+          >
+            <History className="h-4 w-4" />
+            <span className="hidden text-sm font-medium sm:inline">History</span>
+          </button>
+        </div>
       </div>
 
-      {/* ── History Sidebar ──────────────────────── */}
-      {isSidebarOpen && (
-        <div 
-          className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in transition-all"
-          onClick={() => setIsSidebarOpen(false)}
-        >
-          <div 
-            className="absolute top-0 right-0 h-full w-full max-w-sm bg-[var(--color-background)] border-l border-[var(--color-border)] shadow-2xl flex flex-col animate-in slide-in-from-right transition-all"
+      {<ChatPane key={active.id} id={active.id} initialMessages={active.messages} onActivity={refreshList} />}
+
+      {historyOpen && (
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={() => setHistoryOpen(false)}>
+          <div
+            className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col border-l border-[var(--color-border)] bg-[var(--color-surface-0)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
-              <h2 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-                <Clock className="h-5 w-5 text-[var(--color-brand-400)]" /> 
-                Chat History
+            <div className="flex items-center justify-between border-b border-[var(--color-border)] p-5">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--color-text-primary)]">
+                <Clock className="h-5 w-5 text-[var(--color-brand-400)]" /> Chats
               </h2>
-              <button 
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 rounded-lg hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
+              <button onClick={() => setHistoryOpen(false)} aria-label="Close" className="p-2 text-[var(--color-text-muted)]">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
-            <div className="p-4 border-b border-[var(--color-border)]">
-              <button 
-                onClick={handleNewChat}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--color-brand-500)]/10 text-[var(--color-brand-400)] font-medium hover:bg-[var(--color-brand-500)]/20 transition-colors border border-[var(--color-brand-400)]/30"
-              >
-                <Plus className="h-5 w-5" />
-                Start New Chat
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {conversations.length === 0 ? (
-                <div className="text-center text-[var(--color-text-muted)] mt-10 text-sm">
-                  No previous conversations found from the last 7 days.
-                </div>
-              ) : (
-                conversations.map((conv) => (
-                  <button
-                    key={conv.id}
-                    onClick={() => selectConversation(conv)}
-                    className={cn(
-                      "w-full text-left p-4 rounded-xl transition-all border",
-                      activeConversationId === conv.id 
-                        ? "bg-[var(--color-surface-3)] border-[var(--color-brand-400)]/50 shadow-sm" 
-                        : "bg-[var(--color-surface-2)] border-[var(--color-border)] hover:border-[var(--color-brand-400)]/30 hover:bg-[var(--color-surface-3)] text-[var(--color-text-muted)]"
-                    )}
-                  >
-                    <div className="font-semibold text-[15px] mb-1 text-[var(--color-text-primary)]">
-                      {conv.title || "Conversation"}
-                    </div>
-                    <div className="text-xs opacity-70">
-                      {new Date(conv.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {conv.messages.length} messages
-                    </div>
+            <div className="flex-1 space-y-2 overflow-y-auto p-4">
+              {conversations.length === 0 && <p className="mt-10 text-center text-sm text-[var(--color-text-muted)]">No chats yet.</p>}
+              {conversations.map((c) => (
+                <div
+                  key={c.id}
+                  className={cn(
+                    "flex items-center gap-2 rounded-xl border p-3",
+                    active.id === c.id ? "border-[var(--color-brand-400)]/50 bg-[var(--color-surface-3)]" : "border-[var(--color-border)] bg-[var(--color-surface-2)]",
+                  )}
+                >
+                  <button onClick={() => open(c.id)} className="min-w-0 flex-1 text-left">
+                    <p className="truncate font-semibold text-[var(--color-text-primary)]">{c.title || "Chat"}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">
+                      {new Date(c.updatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · {c.messageCount} messages
+                    </p>
                   </button>
-                ))
-              )}
+                  <button onClick={() => remove(c.id)} aria-label="Delete chat" className="p-1 text-[var(--color-text-muted)] hover:text-red-400">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

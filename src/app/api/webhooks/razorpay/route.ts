@@ -1,74 +1,45 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import crypto from "crypto";
+import { HttpError } from "@/server/http";
+import { isValidWebhookSignature, markOrderFailed, markOrderPaid } from "@/server/payments";
 
+// POST /api/webhooks/razorpay — source of truth for payments.
+// Subscribe to: order.paid, payment.failed
 export async function POST(req: Request) {
-  try {
-    const body = await req.text();
-    const signature = req.headers.get("x-razorpay-signature");
-
-    if (!signature) {
-      return NextResponse.json({ error: "Missing signature" }, { status: 400 });
-    }
-
-    // Verify webhook signature
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET || "")
-      .update(body)
-      .digest("hex");
-
-    if (expectedSignature !== signature) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-    }
-
-    const event = JSON.parse(body);
-
-    switch (event.event) {
-      case "order.paid": {
-        const order = event.payload.order.entity;
-        const userId = order.notes?.userId;
-
-        if (!userId) break;
-
-        const tier = "PRO";
-        const now = new Date();
-        const thirtyDaysFromNow = new Date();
-        thirtyDaysFromNow.setDate(now.getDate() + 30);
-
-        await prisma.subscription.upsert({
-          where: { userId },
-          create: {
-            userId,
-            tier: tier,
-            razorpaySubscriptionId: order.id, // We store the order ID here for reference
-            status: "active",
-            currentPeriodStart: now,
-            currentPeriodEnd: thirtyDaysFromNow,
-          },
-          update: {
-            tier: tier,
-            razorpaySubscriptionId: order.id,
-            status: "active",
-            currentPeriodStart: now,
-            currentPeriodEnd: thirtyDaysFromNow,
-          },
-        });
-
-        // Update the user's tier
-        await prisma.user.update({
-          where: { id: userId },
-          data: { subscriptionTier: tier },
-        });
-        break;
-      }
-    }
-
-    return NextResponse.json({ received: true });
-  } catch (error: any) {
-    console.error("[RAZORPAY_WEBHOOK]", error);
-    return NextResponse.json(
-      { error: "Webhook handler failed" },
-      { status: 500 }
-    );
+  const raw = await req.text();
+  if (!isValidWebhookSignature(raw, req.headers.get("x-razorpay-signature"))) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
+
+  let event: { event?: string; payload?: Record<string, { entity?: Record<string, unknown> }> };
+  try {
+    event = JSON.parse(raw);
+  } catch {
+    return NextResponse.json({ error: "Bad JSON" }, { status: 400 });
+  }
+
+  try {
+    if (event.event === "order.paid") {
+      const order = event.payload?.order?.entity;
+      const payment = event.payload?.payment?.entity;
+      if (typeof order?.id === "string" && typeof payment?.id === "string") {
+        await markOrderPaid({
+          razorpayOrderId: order.id,
+          razorpayPaymentId: payment.id,
+          paidAmountPaise: typeof order.amount_paid === "number" ? order.amount_paid : undefined,
+        });
+      }
+    } else if (event.event === "payment.failed") {
+      const orderId = event.payload?.payment?.entity?.order_id;
+      if (typeof orderId === "string") await markOrderFailed(orderId);
+    }
+  } catch (err) {
+    // Unknown orders (e.g. created by another app on the same account) are acknowledged, not retried forever.
+    if (err instanceof HttpError && err.status < 500) {
+      console.warn("[razorpay webhook] ignored:", err.message);
+      return NextResponse.json({ received: true, ignored: err.message });
+    }
+    console.error("[razorpay webhook]", err);
+    return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
+  }
+  return NextResponse.json({ received: true });
 }

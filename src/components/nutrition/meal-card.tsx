@@ -8,6 +8,7 @@ import { useState, useRef } from "react";
 import { ChevronDown, Plus, Heart, Loader2, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { api, ApiError, errorMessage } from "@/lib/api-client";
 import { MealItemRow } from "./meal-item-row";
 import { FoodSearchModal } from "./food-search-modal";
 import type { MealType, ServingUnit } from "@/types/nutrition.types";
@@ -53,6 +54,7 @@ interface MealItemData {
   foodId: string;
   food: { name: string; brand: string | null };
   quantityG: number;
+  quantity: number | null;
   servingUnit: ServingUnit;
   calories: number;
   proteinG: number;
@@ -102,24 +104,15 @@ export function MealCard({
     if (!mealName.trim()) return;
     try {
       setIsSubmitting(true);
-      const res = await fetch("/api/nutrition/saved-meals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: mealName.trim(),
-          items: items.map((item) => ({
-            foodId: item.foodId,
-            quantityG: item.quantityG,
-            servingUnit: item.servingUnit,
-          })),
-        }),
+      // The server copies exactly what is logged for this meal (quantities + units).
+      await api("/api/nutrition/saved-meals", {
+        body: { name: mealName.trim(), fromLog: { date, mealType } },
       });
-      if (!res.ok) throw new Error("Failed to save meal");
       toast.success("Meal saved to My Meals!");
       setIsSaving(false);
       setMealName("");
     } catch (error) {
-      toast.error("Failed to save meal. Please try again.");
+      toast.error(errorMessage(error, "Failed to save meal. Please try again."));
     } finally {
       setIsSubmitting(false);
     }
@@ -129,21 +122,21 @@ export function MealCard({
     if (!magicText.trim()) return;
     try {
       setIsSubmitting(true);
-      const res = await fetch("/api/nutrition/voice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: magicText, mealType, date }),
+      const { items: logged } = await api<{ items: { name: string; calories: number }[] }>("/api/nutrition/meals/ai", {
+        body: { text: magicText, mealType, date },
       });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to parse magic log");
-      }
-      toast.success("Magic Log success!");
+      toast.success(`Logged ${logged.map((i) => `${i.name} (${i.calories} kcal)`).join(", ")}`);
       setMagicText("");
       setIsMagicLogging(false);
       onRefresh();
-    } catch (error: any) {
-      toast.error(error.message || "Could not parse that food. Please try again.");
+    } catch (error) {
+      if (error instanceof ApiError && error.isProRequired) {
+        toast.error("AI logging is a PRO feature.", {
+          action: { label: "Upgrade", onClick: () => (window.location.href = "/settings/subscription") },
+        });
+      } else {
+        toast.error(errorMessage(error, "Could not parse that food. Please try again."));
+      }
     } finally {
       setIsSubmitting(false);
     }

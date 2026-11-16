@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function CoachPage() {
   return (
-    <PremiumGate title="Unlock Your Personal AI Coach" description="Upgrade to PRO to chat with the Gemini AI Coach. Get instant personalized advice, workout critiques, and form checks.">
+    <PremiumGate title="Unlock Your Personal AI Coach" description="A coach that reads your real food, training and recovery data, answers in seconds, and can log meals for you.">
       <CoachClient />
     </PremiumGate>
   );

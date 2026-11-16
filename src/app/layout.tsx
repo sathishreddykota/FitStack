@@ -5,6 +5,7 @@ import { dark } from "@clerk/themes";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { APP_NAME, APP_TAGLINE, APP_DESCRIPTION } from "@/lib/constants";
+import { PwaSupport } from "@/components/layout/pwa";
 
 // ─────────────────────────────────────────────
 // Fonts
@@ -56,6 +57,13 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  applicationName: APP_NAME,
+  appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "black-translucent" },
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -63,6 +71,7 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover", // lets content use the full screen on notched phones (safe-area insets)
 };
 
 // ─────────────────────────────────────────────
@@ -84,7 +93,7 @@ export default function RootLayout({
       }}
     >
       <html
-        lang="en"
+        lang="en-IN"
         className={`${inter.variable} h-full`}
         suppressHydrationWarning
       >
@@ -97,7 +106,7 @@ export default function RootLayout({
           {children}
           <Toaster
             theme="dark"
-            position="bottom-right"
+            position="top-center"
             toastOptions={{
               style: {
                 background: "oklch(14% 0.01 260)",
@@ -106,6 +115,7 @@ export default function RootLayout({
               },
             }}
           />
+          <PwaSupport />
         </body>
       </html>
     </ClerkProvider>

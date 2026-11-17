@@ -25,6 +25,24 @@ first upload if you want a different one.
 3. On your phone: *Settings → About phone → tap "Build number" 7 times*, then
    *Developer options → USB debugging: on*. Plug the phone in and allow the computer.
 
+### Already set up on this PC (no Android Studio needed to build)
+
+Java 21 and the Android SDK are installed in your user folder, so the app builds from a terminal:
+
+| Tool | Location |
+|---|---|
+| Java 21 (Microsoft OpenJDK) | `C:\Users\sathi\.jdks\jdk-21.0.13.0.2+1` |
+| Android SDK (platform 36, build-tools 36.0.0, platform-tools) | `C:\Users\sathi\AppData\Local\Android\Sdk` |
+
+```bash
+cd android
+JAVA_HOME="C:\Users\sathi\.jdks\jdk-21.0.13.0.2+1" ./gradlew.bat assembleDebug
+# → android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+`android/local.properties` (not committed) points Gradle at the SDK. Android Studio, if you install
+it later, uses the same SDK.
+
 ## Try it on your phone (against your PC)
 
 The phone and PC must be on the same Wi-Fi.

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireOnboardedUser, todayOf } from "@/server/auth";
+import { entitlementOf, requireOnboardedUser, todayOf } from "@/server/auth";
 import { toDbDate } from "@/server/dates";
 import { dailyTotals, getDayMeals } from "@/server/nutrition/service";
 import { recoveryForDay, waterForDay } from "@/server/tracking";
@@ -7,6 +7,7 @@ import { getNutritionAnalytics, getRecentPRs, getWeightAnalytics, getWorkoutAnal
 import { StatCard } from "@/components/dashboard/stat-card";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { AIInsightCard } from "@/components/dashboard/ai-insight-card";
+import { RunningTile } from "@/components/dashboard/running-tile";
 import { ProgressSummaryCard } from "@/components/progress/progress-summary-card";
 import {
   Flame,
@@ -335,6 +336,9 @@ export default async function DashboardPage() {
         workoutData={workoutAnalytics.chartData} 
         calorieTarget={calorieTarget}
       />
+
+      {/* ── Running ───────────────────────────────── */}
+      <RunningTile userId={user.id} today={today} isPro={entitlementOf(user).isPro} />
 
       {/* ── Recovery ──────────────────────────────── */}
       <section aria-labelledby="recovery-heading" className="pt-6">

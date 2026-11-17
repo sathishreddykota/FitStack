@@ -146,7 +146,7 @@ export default function RecordClient({ today, simulate }: { today: string; simul
 
   // ── Saved: celebration ────────────────────────────────────────────
   if (stage === "saved" && saved) {
-    return <SavedView saved={saved} onAgain={() => { setSaved(null); setTitle(""); setFeel(null); setStage("live"); }} onDone={() => router.push("/dashboard")} />;
+    return <SavedView saved={saved} onAgain={() => { setSaved(null); setTitle(""); setFeel(null); setStage("live"); }} onDone={() => router.push(`/activity/${saved.activity.id}`)} />;
   }
 
   // ── Save sheet ────────────────────────────────────────────────────
@@ -435,7 +435,7 @@ function SavedView({ saved, onAgain, onDone }: { saved: Saved; onAgain: () => vo
       )}
       {a.calories ? <p className="text-sm text-[var(--color-text-muted)]">≈ {a.calories} kcal burned</p> : null}
       <div className="flex w-full max-w-md flex-col gap-3">
-        <button onClick={onDone} className="h-14 rounded-2xl bg-[var(--color-brand-500)] font-black uppercase tracking-widest text-black">Done</button>
+        <button onClick={onDone} className="h-14 rounded-2xl bg-[var(--color-brand-500)] font-black uppercase tracking-widest text-black">See splits &amp; details</button>
         <button onClick={onAgain} className="h-12 rounded-2xl border border-[var(--color-border)] font-semibold">Record another</button>
       </div>
       <style>{`

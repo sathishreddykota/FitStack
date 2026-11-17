@@ -399,3 +399,19 @@ h1, h2, h3, h4, h5, h6 {
 .macro-carbs   { color: var(--color-carbs); }
 .macro-fat     { color: var(--color-fat); }
 .macro-fiber   { color: var(--color-fiber); }
+
+/* ── Activity motion (runs) ───────────────────────────────── */
+/* Route lines draw themselves; cards rise in; bars grow up/out in sequence. */
+.fs-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: fsDraw 1.1s cubic-bezier(.65, 0, .35, 1) .1s forwards; }
+@keyframes fsDraw { to { stroke-dashoffset: 0; } }
+.fs-rise { animation: fsRise .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
+@keyframes fsRise { from { opacity: 0; transform: translateY(14px); } }
+.fs-grow-y { transform-origin: bottom; animation: fsGrowY .7s cubic-bezier(.34, 1.4, .64, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes fsGrowY { from { transform: scaleY(0); } }
+.fs-grow-x { transform-origin: left; animation: fsGrowX .7s cubic-bezier(.34, 1.3, .64, 1) both; animation-delay: calc(var(--i, 0) * 55ms); }
+@keyframes fsGrowX { from { transform: scaleX(0); } }
+.fs-glow { box-shadow: 0 0 18px rgba(200, 245, 96, .45); }
+@media (prefers-reduced-motion: reduce) {
+  .fs-draw { animation: none; stroke-dashoffset: 0; }
+  .fs-rise, .fs-grow-y, .fs-grow-x { animation: none; }
+}

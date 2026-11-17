@@ -65,6 +65,10 @@ export function RouteMap({ points, live = false, current = null, className, inte
     })();
     return () => {
       cancelled = true;
+      // Stop any pan/zoom first: removing mid-animation makes Leaflet throw
+      // "_leaflet_pos" from a pending transition callback.
+      map.current?.stop();
+      map.current?.off();
       map.current?.remove();
       map.current = null;
       start.current = null;
@@ -98,9 +102,13 @@ export function RouteMap({ points, live = false, current = null, className, inte
 
     if (live) {
       const last = points[points.length - 1] ?? current;
-      if (last) m.setView([last.lat, last.lng], Math.max(m.getZoom(), 16), { animate: true });
+      if (last) {
+        const zoom = Math.max(m.getZoom(), 16);
+        // Glide when only panning; jump when the zoom changes (zoom animations race with unmount).
+        m.setView([last.lat, last.lng], zoom, { animate: zoom === m.getZoom() });
+      }
     } else if (points.length > 1 && !fitted.current) {
-      m.fitBounds(line.current!.getBounds(), { padding: [28, 28], maxZoom: 17 });
+      m.fitBounds(line.current!.getBounds(), { padding: [28, 28], maxZoom: 17, animate: false });
       fitted.current = true;
     }
   }, [points, live, current, ready]);
@@ -118,7 +126,7 @@ export function RouteMap({ points, live = false, current = null, className, inte
     if (!here.current) {
       const icon = leaflet.divIcon({ className: "fs-here", html: '<span class="fs-here-dot"></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
       here.current = leaflet.marker([current.lat, current.lng], { icon, interactive: false, keyboard: false }).addTo(m);
-      if (!points.length) m.setView([current.lat, current.lng], 16);
+      if (!points.length) m.setView([current.lat, current.lng], 16, { animate: false });
     } else {
       here.current.setLatLng([current.lat, current.lng]);
     }

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { formatPace } from "@/server/activity/geo";
 import { flushQueue, newClientId, pendingCount, queueUpload, type RecordType } from "@/lib/run-storage";
 import { useRunRecorder, type GpsState } from "@/hooks/use-run-recorder";
+import { openNativeSettings } from "@/lib/native-gps";
 
 const RouteMap = dynamic(() => import("@/components/activity/route-map").then((m) => m.RouteMap), {
   ssr: false,
@@ -25,7 +26,7 @@ const TYPES: { id: RecordType; label: string; icon: typeof Footprints }[] = [
 ];
 
 const GPS_TEXT: Record<GpsState, string> = {
-  off: "GPS off",
+  off: "Location is off — turn it on in your phone's quick settings",
   searching: "Finding GPS…",
   weak: "Weak GPS — move to open sky",
   good: "GPS ready",
@@ -292,8 +293,19 @@ export default function RecordClient({ today, simulate }: { today: string; simul
               Start
             </button>
             <p className="text-center text-sm text-[var(--color-text-muted)]">
-              {canStart ? "Keep this screen open while you move — your phone's screen stays on." : GPS_TEXT[r.gps]}
+              {!canStart
+                ? r.native
+                  ? GPS_TEXT[r.gps].replace("browser settings", "app settings")
+                  : GPS_TEXT[r.gps]
+                : r.native
+                  ? "You can lock your phone — FitStack keeps tracking and shows a notification."
+                  : "Keep this screen open while you move — your phone's screen stays on."}
             </p>
+            {r.native && r.gps === "denied" && (
+              <button onClick={openNativeSettings} className="mx-auto h-11 rounded-full border border-[var(--color-border)] px-5 text-sm font-semibold">
+                Open settings
+              </button>
+            )}
 
             <div className="mt-auto flex flex-col gap-3">
               {pending > 0 && (

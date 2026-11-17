@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cleanTrack, haversine, summarize, type TrackPoint } from "@/server/activity/geo";
 import { loadActive, newClientId, saveActive, type ActiveRecording, type RecordType } from "@/lib/run-storage";
+import { isNativeApp, watchNativePosition } from "@/lib/native-gps";
 
 // ─────────────────────────────────────────────
 // useRunRecorder — browser GPS recording.
-// Works while this page is open and the screen is on (we hold a Wake Lock).
-// The Android app replaces the position source with a native foreground
-// service in step 6; everything else here stays the same.
+// In a browser it works while the page is open and the screen is on (we hold a
+// Wake Lock). In the Android app, positions come from a native foreground
+// service while recording, so it keeps going with the screen off.
 // ─────────────────────────────────────────────
 
 export type GpsState = "off" | "searching" | "weak" | "good" | "denied" | "unsupported";
@@ -39,8 +40,9 @@ function simulator(onFix: (f: Fix) => void) {
 export function useRunRecorder(opts: { simulate?: boolean } = {}) {
   // This hook runs client-only (the record screen is loaded with ssr: false),
   // so the initial state can read the device directly.
+  const [native] = useState(() => !opts.simulate && isNativeApp());
   const [gps, setGps] = useState<GpsState>(() =>
-    opts.simulate || (typeof navigator !== "undefined" && "geolocation" in navigator) ? "searching" : "unsupported",
+    native || opts.simulate || (typeof navigator !== "undefined" && "geolocation" in navigator) ? "searching" : "unsupported",
   );
   const [fix, setFix] = useState<Fix | null>(null);
   // Restore an unfinished recording (refresh, crash, closed tab) — it comes back paused.
@@ -53,6 +55,8 @@ export function useRunRecorder(opts: { simulate?: boolean } = {}) {
   const wake = useRef<{ release: () => Promise<void> } | null>(null);
 
   const status: RecorderStatus = !rec ? "idle" : rec.pausedAt ? "paused" : "recording";
+  // App only: run the foreground service (notification + screen-off tracking) while recording.
+  const background = native && status === "recording";
 
   const update = useCallback((next: ActiveRecording | null, persist = true) => {
     recRef.current = next;
@@ -75,6 +79,11 @@ export function useRunRecorder(opts: { simulate?: boolean } = {}) {
     };
 
     if (opts.simulate) return simulator(onFix);
+    if (native) {
+      return watchNativePosition(background, onFix, (problem) =>
+        setGps(problem === "denied" ? "denied" : problem === "disabled" ? "off" : "weak"),
+      );
+    }
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) return;
     const id = navigator.geolocation.watchPosition(
       (p) =>
@@ -89,7 +98,7 @@ export function useRunRecorder(opts: { simulate?: boolean } = {}) {
       { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000 },
     );
     return () => navigator.geolocation.clearWatch(id);
-  }, [opts.simulate, update]);
+  }, [opts.simulate, native, background, update]);
 
   // Clock tick for the live timer.
   useEffect(() => {
@@ -99,8 +108,9 @@ export function useRunRecorder(opts: { simulate?: boolean } = {}) {
   }, [status]);
 
   // Keep the screen on while recording (browsers stop GPS when it turns off).
+  // Not needed in the app: the foreground service tracks with the screen off.
   useEffect(() => {
-    if (status !== "recording") return;
+    if (status !== "recording" || native) return;
     let cancelled = false;
     const acquire = async () => {
       try {
@@ -121,7 +131,7 @@ export function useRunRecorder(opts: { simulate?: boolean } = {}) {
       wake.current?.release().catch(() => {});
       wake.current = null;
     };
-  }, [status]);
+  }, [status, native]);
 
   const start = useCallback(
     (type: RecordType) => {
@@ -176,5 +186,5 @@ export function useRunRecorder(opts: { simulate?: boolean } = {}) {
 
   const elapsedSec = rec ? Math.max(0, Math.round(((rec.pausedAt ?? now) - rec.startedAt - rec.pausedMs) / 1000)) : 0;
 
-  return { gps, fix, rec, status, stats, elapsedSec, start, pause, resume, finish, discard };
+  return { gps, fix, rec, status, stats, elapsedSec, native, start, pause, resume, finish, discard };
 }

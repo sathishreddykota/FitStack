@@ -18,6 +18,7 @@ const pointSchema = z.object({
   t: z.number().int().positive(),
   alt: z.number().min(-500).max(9000).nullable().optional(),
   acc: z.number().min(0).max(10_000).nullable().optional(),
+  seg: z.number().int().min(0).max(1000).nullable().optional(),
 });
 
 export const saveActivitySchema = z.discriminatedUnion("source", [

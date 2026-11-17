@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser, UserButton } from "@clerk/nextjs";
 import {
+  Footprints,
   LayoutDashboard,
   UtensilsCrossed,
   Dumbbell,
@@ -24,6 +25,7 @@ import { APP_NAME } from "@/lib/constants";
 
 const ICON_MAP = {
   LayoutDashboard,
+  Footprints,
   UtensilsCrossed,
   Dumbbell,
   TrendingUp,
@@ -42,6 +44,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/nutrition", label: "Nutrition", icon: "UtensilsCrossed" },
   { href: "/workout", label: "Workout", icon: "Dumbbell" },
+  { href: "/activity/record", label: "Run", icon: "Footprints" },
   { href: "/progress", label: "Progress", icon: "TrendingUp" },
   { href: "/water", label: "Water", icon: "Droplets" },
   { href: "/recovery", label: "Recovery", icon: "Moon" },
@@ -51,8 +54,8 @@ const NAV_ITEMS = [
 ] as const;
 
 // Separate main nav from bottom items
-const MAIN_NAV = NAV_ITEMS.slice(0, 7);
-const BOTTOM_NAV = NAV_ITEMS.slice(7);
+const MAIN_NAV = NAV_ITEMS.slice(0, 8);
+const BOTTOM_NAV = NAV_ITEMS.slice(8);
 
 // ─────────────────────────────────────────────
 // NavItem Component

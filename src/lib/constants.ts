@@ -136,6 +136,7 @@ export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/nutrition", label: "Nutrition", icon: "UtensilsCrossed" },
   { href: "/workout", label: "Workout", icon: "Dumbbell" },
+  { href: "/activity/record", label: "Run", icon: "Footprints" },
   { href: "/progress", label: "Progress", icon: "TrendingUp" },
   { href: "/water", label: "Water", icon: "Droplets" },
   { href: "/recovery", label: "Recovery", icon: "Moon" },

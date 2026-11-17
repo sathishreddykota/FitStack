@@ -66,6 +66,17 @@ describe("summarize", () => {
     expect(s.movingSec).toBeLessThan(350);
   });
 
+  it("ignores distance and time covered while paused (Pause → Resume segments)", () => {
+    const a = track({ metres: 1000, speed: 3 }).map((p) => ({ ...p, seg: 0 }));
+    const last = a[a.length - 1];
+    // Paused, walked 400 m to a café, resumed 5 minutes later
+    const b = track({ metres: 1000, speed: 3, t0: last.t + 300_000, startLat: last.lat + 400 / M_PER_DEG_LAT }).map((p) => ({ ...p, seg: 1 }));
+    const s = summarize(cleanTrack([...a, ...b], "RUN"), "RUN");
+    expect(s.distanceM).toBeGreaterThan(1990);
+    expect(s.distanceM).toBeLessThan(2010);
+    expect(s.movingSec).toBeCloseTo(667, -1);
+  });
+
   it("handles an empty track", () => {
     expect(summarize([], "RUN")).toMatchObject({ distanceM: 0, movingSec: 0, splits: [] });
   });

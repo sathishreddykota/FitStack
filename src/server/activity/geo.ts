@@ -14,7 +14,11 @@ export interface TrackPoint {
   alt?: number | null;
   /** horizontal accuracy in metres (smaller is better) */
   acc?: number | null;
+  /** recording segment: increases after each Pause → Resume. Nothing between segments counts. */
+  seg?: number | null;
 }
+
+const sameSeg = (a: TrackPoint, b: TrackPoint) => (a.seg ?? 0) === (b.seg ?? 0);
 
 const R = 6_371_008.8; // mean Earth radius (m)
 const rad = (d: number) => (d * Math.PI) / 180;
@@ -67,6 +71,10 @@ export function cleanTrack(raw: TrackPoint[], kind: ActivityKind): TrackPoint[] 
     }
     const dt = (p.t - prev.t) / 1000;
     if (dt <= 0) continue;
+    if (!sameSeg(prev, p)) {
+      out.push(p); // first fix after Resume: the user may have moved while paused
+      continue;
+    }
     const d = haversine(prev, p);
     if (d / dt > maxSpeed) continue; // teleport / multipath spike
     if (d < MIN_STEP_M) continue; // standing-still jitter
@@ -131,7 +139,7 @@ export function summarize(pts: TrackPoint[], kind: ActivityKind): TrackSummary {
 
   for (let i = 1; i < n; i++) {
     const dt = (pts[i].t - pts[i - 1].t) / 1000;
-    const d = haversine(pts[i - 1], pts[i]);
+    const d = sameSeg(pts[i - 1], pts[i]) ? haversine(pts[i - 1], pts[i]) : 0; // paused stretch: no distance
     const speed = d / dt;
     const moving = dt <= GAP_AS_PAUSE_SEC && speed >= pauseBelow;
     cumDist[i] = cumDist[i - 1] + d;

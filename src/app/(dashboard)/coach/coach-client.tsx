@@ -21,13 +21,14 @@ const SUGGESTIONS = [
   "How did I do this week?",
   "What should I eat for dinner to hit my protein?",
   "Log 2 boiled eggs and a banana for breakfast",
-  "My bench has stalled — what should I change?",
+  "How is my running going? Plan my next week of runs",
 ];
 
 const TOOL_LABELS: Record<string, [running: string, done: string]> = {
   getToday: ["Checking today's log…", "Checked today's log"],
   getHistory: ["Reviewing your recent data…", "Reviewed your recent data"],
   getUpcomingWorkouts: ["Looking at your schedule…", "Checked your schedule"],
+  getRuns: ["Looking at your runs…", "Checked your runs"],
   searchFoods: ["Searching foods…", "Searched foods"],
   logFood: ["Logging food…", "Food logged ✓"],
   logWater: ["Logging water…", "Water logged ✓"],

@@ -262,3 +262,95 @@ export async function activityStats(userId: string, today: string) {
     longestRun: longest ? { ...longest, day: fromDbDate(longest.date) } : null,
   };
 }
+
+// ── For the AI coach ────────────────────────────────────────────────
+
+const fmtPace = (sec: number | null | undefined) =>
+  sec ? `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}/km` : null;
+
+/**
+ * Compact running picture for the coach: weekly mileage and pace trend, recent
+ * activities with km splits, and personal bests. Numbers are rounded so the
+ * prompt stays small.
+ */
+export async function runningForCoach(userId: string, today: string, weeks = 8) {
+  const n = Math.min(Math.max(Math.round(weeks), 1), 26);
+  const firstWeek = addDays(startOfWeek(today), -7 * (n - 1));
+  const [rows, recent, prs] = await Promise.all([
+    prisma.activity.findMany({
+      where: { userId, date: { gte: toDbDate(firstWeek), lte: toDbDate(today) } },
+      select: { type: true, date: true, distanceM: true, movingSec: true, calories: true },
+    }),
+    prisma.activity.findMany({
+      where: { userId },
+      orderBy: { startedAt: "desc" },
+      take: 10,
+      select: {
+        type: true, source: true, title: true, date: true, distanceM: true, movingSec: true, elapsedSec: true,
+        avgPaceSecPerKm: true, elevationGainM: true, calories: true, feel: true, notes: true,
+        splits: { orderBy: { index: "asc" }, select: { distanceM: true, movingSec: true } },
+      },
+    }),
+    prisma.bestEffort.findMany({ where: { userId, isPR: true }, select: { type: true, distanceM: true, timeSec: true, activity: { select: { date: true } } } }),
+  ]);
+
+  const weeksOut = Array.from({ length: n }, (_, i) => ({ weekStart: addDays(firstWeek, i * 7), km: 0, runs: 0, runKm: 0, runSec: 0, kcal: 0 }));
+  for (const r of rows) {
+    const day = fromDbDate(r.date);
+    const wi = Math.floor((Date.parse(`${day}T00:00:00Z`) - Date.parse(`${firstWeek}T00:00:00Z`)) / (7 * 86_400_000));
+    const w = weeksOut[wi];
+    if (!w) continue;
+    w.km += r.distanceM / 1000;
+    w.kcal += r.calories ?? 0;
+    if (r.type === "RUN" || r.type === "TREADMILL") {
+      w.runs++;
+      w.runKm += r.distanceM / 1000;
+      w.runSec += r.movingSec;
+    }
+  }
+
+  return {
+    weeklyTotals: weeksOut.map((w) => ({
+      weekStart: w.weekStart,
+      totalKm: Math.round(w.km * 10) / 10,
+      runs: w.runs,
+      runKm: Math.round(w.runKm * 10) / 10,
+      avgRunPace: w.runKm > 0 ? fmtPace(w.runSec / w.runKm) : null,
+      kcalBurned: Math.round(w.kcal),
+    })),
+    recentActivities: recent.map((a) => ({
+      date: fromDbDate(a.date),
+      type: a.type,
+      title: a.title,
+      manual: a.source === "MANUAL",
+      km: Math.round(a.distanceM / 10) / 100,
+      movingMin: Math.round(a.movingSec / 6) / 10,
+      stoppedMin: Math.round(Math.max(0, a.elapsedSec - a.movingSec) / 6) / 10,
+      avgPace: fmtPace(a.avgPaceSecPerKm),
+      kmSplits: a.splits.filter((s) => s.distanceM >= 900).map((s) => fmtPace(s.movingSec / (s.distanceM / 1000))),
+      elevationGainM: a.elevationGainM != null ? Math.round(a.elevationGainM) : null,
+      kcal: a.calories,
+      feel: a.feel ? ["hard", "tough", "ok", "good", "great"][a.feel - 1] : null,
+      notes: a.notes?.slice(0, 200) ?? null,
+    })),
+    personalBests: prs.map((p) => ({
+      type: p.type,
+      distanceKm: p.distanceM / 1000,
+      time: `${Math.floor(p.timeSec / 60)}:${String(p.timeSec % 60).padStart(2, "0")}`,
+      date: fromDbDate(p.activity.date),
+    })),
+  };
+}
+
+/** Activities on one local day (for "today" summaries). */
+export async function activitiesOnDay(userId: string, day: string) {
+  const rows = await prisma.activity.findMany({
+    where: { userId, date: toDbDate(day) },
+    orderBy: { startedAt: "asc" },
+    select: { type: true, title: true, distanceM: true, movingSec: true, calories: true },
+  });
+  return {
+    items: rows.map((r) => ({ type: r.type, title: r.title, km: Math.round(r.distanceM / 10) / 100, movingMin: Math.round(r.movingSec / 60), kcal: r.calories })),
+    kcalBurned: rows.reduce((a, r) => a + (r.calories ?? 0), 0),
+  };
+}

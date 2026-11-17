@@ -8,6 +8,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { AIInsightCard } from "@/components/dashboard/ai-insight-card";
 import { RunningTile } from "@/components/dashboard/running-tile";
+import { activitiesOnDay } from "@/server/activity/service";
 import { ProgressSummaryCard } from "@/components/progress/progress-summary-card";
 import {
   Flame,
@@ -54,6 +55,7 @@ export default async function DashboardPage() {
     nutritionAnalytics,
     workoutAnalytics,
     recentPRs,
+    todayActivities,
   ] = await Promise.all([
     getDayMeals(user.id, today),
     waterForDay(user.id, today),
@@ -68,6 +70,7 @@ export default async function DashboardPage() {
     getNutritionAnalytics(user.id, 7, today),
     getWorkoutAnalytics(user.id, 7, today),
     getRecentPRs(user.id),
+    activitiesOnDay(user.id, today),
   ]);
 
   const totals = dailyTotals(todayMeals);
@@ -135,7 +138,11 @@ export default async function DashboardPage() {
             label="Calories"
             value={hasAnyMealData ? Math.round(todayCalories) : "—"}
             unit={hasAnyMealData ? "kcal" : undefined}
-            subtext={calorieTarget ? `of ${calorieTarget} kcal target` : undefined}
+            subtext={
+              [calorieTarget ? `of ${calorieTarget} kcal target` : null, todayActivities.kcalBurned ? `${todayActivities.kcalBurned} burned moving` : null]
+                .filter(Boolean)
+                .join(" · ") || undefined
+            }
             icon={Flame}
             iconColor="var(--color-calories)"
             progress={

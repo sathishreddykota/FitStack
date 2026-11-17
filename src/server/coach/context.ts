@@ -4,6 +4,7 @@ import type { AppUser } from "../auth";
 import { addDays, fromDbDate, toDbDate } from "../dates";
 import { dailyTotals, getDayMeals } from "../nutrition/service";
 import { DEFAULT_WATER_TARGET_ML, waterForDay } from "../tracking";
+import { activitiesOnDay } from "../activity/service";
 
 // ─────────────────────────────────────────────
 // Compact, model-friendly summaries of the user's real data.
@@ -42,7 +43,7 @@ export function profileSummary(user: AppUser) {
 }
 
 export async function todaySummary(user: AppUser, today: string) {
-  const [meals, water, sessions, sleep, weight] = await Promise.all([
+  const [meals, water, sessions, sleep, weight, activities] = await Promise.all([
     getDayMeals(user.id, today),
     waterForDay(user.id, today),
     prisma.workoutSession.findMany({
@@ -51,6 +52,7 @@ export async function todaySummary(user: AppUser, today: string) {
     }),
     prisma.sleepLog.findUnique({ where: { userId_date: { userId: user.id, date: toDbDate(today) } } }),
     prisma.weightLog.findFirst({ where: { userId: user.id }, orderBy: { date: "desc" } }),
+    activitiesOnDay(user.id, today),
   ]);
   return {
     date: today,
@@ -59,6 +61,8 @@ export async function todaySummary(user: AppUser, today: string) {
     waterMl: water.totalMl,
     targets: targetsOf(user),
     workouts: sessions,
+    // Runs/walks/rides today. kcalBurned is an estimate — shown to the user, not added to their food budget.
+    activities,
     sleepHours: sleep?.durationMinutes ? Math.round((sleep.durationMinutes / 60) * 10) / 10 : null,
     latestWeight: weight ? { kg: weight.weightKg, date: fromDbDate(weight.date) } : null,
   };

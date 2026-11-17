@@ -7,6 +7,7 @@ import { logFoodFromText } from "../nutrition/ai-log";
 import { searchFoods } from "../nutrition/service";
 import { logWater, logWeight } from "../tracking";
 import { recentHistory, todaySummary, upcomingWorkouts } from "./context";
+import { runningForCoach } from "../activity/service";
 
 // ─────────────────────────────────────────────
 // Tools the AI coach can call. Every tool is bound to the signed-in user —
@@ -43,6 +44,12 @@ export function coachTools(user: AppUser, today: string) {
       description: "Scheduled workouts for the next 7 days with exercises and targets.",
       inputSchema: z.object({}),
       execute: () => safe(() => upcomingWorkouts(user.id, today)),
+    }),
+    getRuns: tool({
+      description:
+        "The user's runs, walks, hikes and rides: weekly km and average run pace for the last N weeks, the last 10 activities with km splits, and personal bests. Use for any running, walking, cardio or race question.",
+      inputSchema: z.object({ weeks: z.number().optional().describe("1 to 26, default 8") }),
+      execute: ({ weeks }) => safe(() => runningForCoach(user.id, today, weeks ?? 8)),
     }),
     searchFoods: tool({
       description: "Look up foods in the database (nutrition per 100 g).",

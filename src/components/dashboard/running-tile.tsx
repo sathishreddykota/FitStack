@@ -40,7 +40,7 @@ export async function RunningTile({ userId, today, isPro }: { userId: string; to
   const [week, last] = await Promise.all([
     prisma.activity.aggregate({
       where: { userId, date: { gte: toDbDate(weekStart), lte: toDbDate(today) } },
-      _sum: { distanceM: true, movingSec: true },
+      _sum: { distanceM: true, movingSec: true, calories: true },
       _count: true,
     }),
     prisma.activity.findFirst({
@@ -63,6 +63,7 @@ export async function RunningTile({ userId, today, isPro }: { userId: string; to
           </p>
           <p className="text-sm text-[var(--color-text-secondary)]">
             {week._count} {week._count === 1 ? "activity" : "activities"} · {clock(week._sum.movingSec ?? 0)}
+            {week._sum.calories ? ` · ${week._sum.calories} kcal` : ""}
           </p>
         </Link>
         {last ? (

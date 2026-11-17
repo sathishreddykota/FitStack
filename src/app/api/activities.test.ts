@@ -196,6 +196,29 @@ describe.skipIf(!url)("Activity API", async () => {
     expect(s.data.longestRun.distanceM).toBeGreaterThan(5000);
   });
 
+  it("gives the coach weekly km, recent runs with splits, PRs and today's burn", async () => {
+    const { runningForCoach, activitiesOnDay } = await import("@/server/activity/service");
+    const { localDateString } = await import("@/server/dates");
+    const me = await prisma.user.findUniqueOrThrow({ where: { clerkId: ME } });
+    const today = localDateString("Asia/Kolkata");
+    const r = await runningForCoach(me.id, today, 4);
+    expect(r.weeklyTotals).toHaveLength(4);
+    const thisWeek = r.weeklyTotals[3];
+    expect(thisWeek.runs).toBeGreaterThanOrEqual(2);
+    expect(thisWeek.avgRunPace).toMatch(/^\d+:\d{2}\/km$/);
+    expect(r.recentActivities.length).toBeGreaterThan(0);
+    const gps = r.recentActivities.find((a) => !a.manual && a.km > 1);
+    expect(gps?.kmSplits.length).toBeGreaterThan(0);
+    expect(r.personalBests.some((p) => p.distanceKm === 5)).toBe(true);
+    // Weeks are capped so a bad tool call can't pull a huge history.
+    expect((await runningForCoach(me.id, today, 500)).weeklyTotals).toHaveLength(26);
+
+    // The latest activity's day (the test runs start hours ago, which can be yesterday just after midnight).
+    const day = await activitiesOnDay(me.id, r.recentActivities[0].date);
+    expect(day.items.length).toBeGreaterThan(0);
+    expect(day.kcalBurned).toBe(day.items.reduce((a, i) => a + (i.kcal ?? 0), 0));
+  });
+
   it("deleting the fastest run gives the PR back to the next best", async () => {
     as(ME);
     expect((await call(one.DELETE, "DELETE", "/x", undefined, { id: fastId })).status).toBe(200);

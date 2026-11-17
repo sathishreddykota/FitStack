@@ -38,6 +38,12 @@ const library: LibraryExercise[] = [
   ex("Running", ["QUADS"], "CARDIO", "CARDIO_MACHINE"),
   ex("Rowing Machine", ["BACK"], "CARDIO", "CARDIO_MACHINE", true),
   ex("Thoracic Rotation", ["BACK"], "MOBILITY", "BODYWEIGHT"),
+  ex("Romanian Deadlift", ["HAMSTRINGS", "GLUTES"], "STRENGTH", "BARBELL", true),
+  ex("Leg Press", ["QUADS", "GLUTES"], "HYPERTROPHY", "MACHINE"),
+  ex("Hip Thrust", ["GLUTES"], "HYPERTROPHY", "BARBELL"),
+  ex("Incline Dumbbell Press", ["UPPER_CHEST"], "HYPERTROPHY", "DUMBBELL"),
+  ex("Jump Rope", ["CALVES"], "CONDITIONING", "OTHER"),
+  ex("Box Jump", ["QUADS", "GLUTES"], "POWER", "OTHER", true),
 ];
 const byId = new Map(library.map((e) => [e.id, e]));
 
@@ -96,6 +102,38 @@ describe("buildPlan", () => {
   it("labels repeated day types A/B", () => {
     const names = buildPlan({ ...base, style: "STRENGTH", daysPerWeek: 3 }, library).days.map((d) => d.name);
     expect(names).toEqual(["Full Body A", "Full Body B", "Full Body C"]);
+  });
+});
+
+describe("exercise choice quality (found testing with the full library)", () => {
+  const names = (dayType: string, style = "HYBRID_STRENGTH" as const) =>
+    buildPlan({ ...base, style, daysPerWeek: 4 }, library)
+      .days.find((d) => d.dayType === dayType)!
+      .exercises.map((e) => byId.get(e.exerciseId)!.name);
+
+  it("keeps conditioning moves out of gym muscle slots", () => {
+    for (const t of ["LOWER_STRENGTH", "LOWER_HYPERTROPHY"]) {
+      const n = names(t);
+      expect(n).not.toContain("Jump Rope");
+      expect(n).not.toContain("Kettlebell Swing");
+      expect(n).not.toContain("Box Jump");
+      expect(n).not.toContain("Bodyweight Squat");
+    }
+    expect(names("LOWER_STRENGTH")).toContain("Standing Calf Raise");
+  });
+
+  it("uses variations, not heavy key lifts, for high-rep volume days", () => {
+    const lowerHyp = names("LOWER_HYPERTROPHY");
+    expect(lowerHyp).not.toContain("Conventional Deadlift");
+    expect(lowerHyp.some((n) => n.includes("Romanian Deadlift"))).toBe(true);
+    expect(lowerHyp).toContain("Hip Thrust");
+    expect(names("UPPER_HYPERTROPHY")).not.toContain("Barbell Bench Press");
+  });
+
+  it("still starts strength days with the big lifts", () => {
+    const n = names("LOWER_STRENGTH");
+    expect(n[0]).toBe("Barbell Back Squat");
+    expect(n).toContain("Conventional Deadlift");
   });
 });
 

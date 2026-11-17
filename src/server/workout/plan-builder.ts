@@ -229,13 +229,24 @@ function clampSets(n: number) {
 
 // ── Selection ───────────────────────────────────────────────────────
 
-function score(ex: LibraryExercise, slot: Slot): number {
+interface ScoreContext {
+  /** Heavy day (Upper/Lower Strength or a strength-style plan): favour the big key lifts. */
+  strengthDay: boolean;
+  /** Training in a gym: prefer loaded movements over bodyweight versions. */
+  gym: boolean;
+}
+
+function score(ex: LibraryExercise, slot: Slot, ctx: ScoreContext): number {
   let s = 0;
   if (slot.muscles) {
     const idx = ex.primaryMuscles.findIndex((m) => slot.muscles!.includes(m));
     if (idx === -1) return -Infinity;
     s += idx === 0 ? 3 : 1; // primary target first
     if (ex.category === "CARDIO" || ex.category === "MOBILITY" || ex.category === "STRETCHING") return -Infinity;
+    // Jump rope, kettlebell swings, box jumps, burpees… belong in conditioning, not muscle slots.
+    if (ex.category === "CONDITIONING" || ex.category === "POWER") s -= 5;
+    // In a gym, loaded versions beat bodyweight ones (except core and pull-ups/dips style key work).
+    if (ctx.gym && ex.equipment === "BODYWEIGHT" && !ex.isKeyLift && !slot.muscles.includes("CORE")) s -= 2;
   }
   if (slot.categories) {
     if (!slot.categories.includes(ex.category)) return -Infinity;
@@ -246,6 +257,9 @@ function score(ex: LibraryExercise, slot: Slot): number {
   if (slot.role === "main") s += (ex.isKeyLift ? 4 : 0) + (ex.isCompoundLift ? 2 : 0) + (ex.category === "STRENGTH" ? 1 : 0);
   if (slot.role === "secondary") s += ex.isCompoundLift ? 1 : 0;
   if (slot.role === "accessory") s += ex.isCompoundLift ? 0 : 1;
+  // Volume days use variations (incline/dumbbell/RDL…) instead of repeating heavy key lifts
+  // for high reps — e.g. no 10–12 rep conventional deadlifts.
+  if (!ctx.strengthDay && slot.role !== "main" && ex.isKeyLift) s -= 3;
   return s;
 }
 
@@ -254,10 +268,11 @@ function pick(
   slot: Slot,
   usedToday: Set<string>,
   variant: number,
+  ctx: ScoreContext,
 ): LibraryExercise | null {
   const ranked = pool
     .filter((e) => !usedToday.has(e.id))
-    .map((e) => ({ e, s: score(e, slot) }))
+    .map((e) => ({ e, s: score(e, slot, ctx) }))
     .filter((x) => x.s > -Infinity)
     .sort((a, b) => b.s - a.s || a.e.name.localeCompare(b.e.name));
   if (ranked.length === 0) return null;
@@ -283,7 +298,11 @@ export function buildPlan(inputs: PlanInputs, library: LibraryExercise[]): PlanO
     const exercises: PlannedExerciseOut[] = [];
 
     for (const slot of tpl.slots) {
-      const ex = pick(pool, slot, used, variant);
+      const ctx = {
+        strengthDay: dayType === "UPPER_STRENGTH" || dayType === "LOWER_STRENGTH" || inputs.style === "STRENGTH",
+        gym: inputs.equipment === "GYM",
+      };
+      const ex = pick(pool, slot, used, variant, ctx);
       if (!ex) continue;
       used.add(ex.id);
       const rx = prescribe(slot.role, inputs, dayType);

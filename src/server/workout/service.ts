@@ -174,14 +174,45 @@ async function ownedSession(userId: string, sessionId: string) {
 }
 
 export async function getSession(userId: string, sessionId: string) {
-  const session = await prisma.workoutSession.findFirst({ where: { id: sessionId, userId }, include: sessionInclude });
+  let session = await prisma.workoutSession.findFirst({ where: { id: sessionId, userId }, include: sessionInclude });
   if (!session) throw notFound("Workout");
   const previous = await previousPerformance(
     userId,
     session.exercises.map((e) => e.exerciseId),
     session.id,
   );
+  // A started workout should be ready to log: create the planned sets if they don't exist yet.
+  if (session.status === "IN_PROGRESS" && (await ensurePlannedSets(session.id, previous))) {
+    session = (await prisma.workoutSession.findFirst({ where: { id: sessionId, userId }, include: sessionInclude }))!;
+  }
   return { ...session, day: fromDbDate(session.date), previous };
+}
+
+/**
+ * For planned exercises that have no sets yet, create `targetSets` empty sets,
+ * pre-filled with what the user lifted last time. Returns true if anything was created.
+ */
+async function ensurePlannedSets(
+  sessionId: string,
+  previous: Record<string, { weightKg: number | null; reps: number | null }[]>,
+) {
+  const empty = await prisma.sessionExercise.findMany({
+    where: { sessionId, sets: { none: {} } },
+    select: { id: true, exerciseId: true, targetSets: true },
+  });
+  const rows = empty.flatMap((e) => {
+    const prev = previous[e.exerciseId] ?? [];
+    const n = Math.min(Math.max(e.targetSets ?? 3, 1), 10);
+    return Array.from({ length: n }, (_, i) => ({
+      sessionExerciseId: e.id,
+      setNumber: i + 1,
+      weightKg: prev[i]?.weightKg ?? prev.at(-1)?.weightKg ?? null,
+      reps: prev[i]?.reps ?? prev.at(-1)?.reps ?? null,
+    }));
+  });
+  if (rows.length === 0) return false;
+  await prisma.workoutSet.createMany({ data: rows });
+  return true;
 }
 
 export async function createSession(userId: string, input: { date: string; name?: string; start?: boolean }) {

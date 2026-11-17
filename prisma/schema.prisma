@@ -249,6 +249,8 @@ model User {
   paymentOrders    PaymentOrder[]
   aiUsage          AIUsage[]
   aiInsights       AIInsight[]
+  activities       Activity[]
+  bestEfforts      BestEffort[]
 
   @@index([clerkId])
   @@index([email])
@@ -794,4 +796,85 @@ model AIInsight {
   createdAt DateTime @default(now())
 
   @@unique([userId, day])
+}
+
+// ───────────────────────────────────────────────────────────────
+// ACTIVITIES (GPS run / walk / ride tracking) — PRO
+// ───────────────────────────────────────────────────────────────
+
+enum ActivityType {
+  RUN
+  WALK
+  HIKE
+  RIDE
+  TREADMILL
+}
+
+enum ActivitySource {
+  GPS
+  MANUAL
+  IMPORT
+}
+
+model Activity {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            ActivityType
+  source          ActivitySource  @default(GPS)
+  title           String
+  notes           String?
+  feel            Int? // 1–5
+  date            DateTime        @db.Date // the user's local day
+  startedAt       DateTime
+  elapsedSec      Int
+  movingSec       Int
+  distanceM       Float
+  elevationGainM  Float?
+  avgPaceSecPerKm Int?
+  maxSpeedMps     Float?
+  calories        Int?
+  polyline        String?         @db.Text // encoded route (Google polyline, precision 5)
+  startLat        Float?
+  startLng        Float?
+  isPrivate       Boolean         @default(true)
+  clientId        String // set by the recording device; makes uploads idempotent
+  splits          ActivitySplit[]
+  bestEfforts     BestEffort[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([userId, clientId])
+  @@index([userId, date])
+  @@index([userId, startedAt])
+}
+
+// One row per kilometre (the last one may be partial)
+model ActivitySplit {
+  id         String   @id @default(cuid())
+  activityId String
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  index      Int
+  distanceM  Float
+  movingSec  Int
+  elevDeltaM Float?
+
+  @@unique([activityId, index])
+}
+
+// Fastest 1 km / 5 km / 10 km / half marathon inside one activity.
+// isPR marks the user's current best for that distance (recomputed on save/delete).
+model BestEffort {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityId String
+  activity   Activity     @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  type       ActivityType
+  distanceM  Int
+  timeSec    Int
+  isPR       Boolean      @default(false)
+
+  @@unique([activityId, distanceM])
+  @@index([userId, type, distanceM, timeSec])
 }

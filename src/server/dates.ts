@@ -111,3 +111,28 @@ export function shortLabel(dateStr: string): string {
     toDbDate(dateStr),
   );
 }
+
+/** Hour of day (0–23) for an instant in `tz`. */
+export function localHour(tz: string, at: Date): number {
+  return Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: safeTimezone(tz) }).format(at));
+}
+
+/** Convert a wall-clock time in `tz` ("2026-11-17", "06:30") to the real instant. */
+export function zonedToUtc(dateStr: string, time: string, tz: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const [hh, mm] = time.split(":").map(Number);
+  const guess = Date.UTC(y, m - 1, d, hh, mm);
+  // Offset of tz at that moment = what the wall clock shows minus UTC.
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: safeTimezone(tz),
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(new Date(guess));
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  const shown = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"));
+  return new Date(guess - (shown - guess));
+}

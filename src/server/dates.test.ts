@@ -47,3 +47,11 @@ describe("dates", () => {
     expect(startOfWeek("2026-11-22")).toBe("2026-11-16"); // Sunday
   });
 });
+
+describe("zoned times", async () => {
+  const { zonedToUtc, localHour } = await import("./dates");
+  it("converts Indian wall-clock time to UTC", () => {
+    expect(zonedToUtc("2026-11-17", "06:30", "Asia/Kolkata").toISOString()).toBe("2026-11-17T01:00:00.000Z");
+    expect(localHour("Asia/Kolkata", new Date("2026-11-17T01:00:00Z"))).toBe(6);
+  });
+});

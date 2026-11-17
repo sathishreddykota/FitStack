@@ -36,8 +36,8 @@ export function coachTools(user: AppUser, today: string) {
     getHistory: tool({
       description:
         "Daily nutrition, water, completed workouts with sets, weight trend and recovery for the last N days. Use before giving advice about progress.",
-      inputSchema: z.object({ days: z.number().int().min(1).max(60).default(14) }),
-      execute: ({ days }) => safe(() => recentHistory(user, today, days)),
+      inputSchema: z.object({ days: z.number().optional().describe("1 to 60, default 14") }),
+      execute: ({ days }) => safe(() => recentHistory(user, today, Math.round(days ?? 14))),
     }),
     getUpcomingWorkouts: tool({
       description: "Scheduled workouts for the next 7 days with exercises and targets.",
@@ -46,10 +46,10 @@ export function coachTools(user: AppUser, today: string) {
     }),
     searchFoods: tool({
       description: "Look up foods in the database (nutrition per 100 g).",
-      inputSchema: z.object({ query: z.string().min(1).max(60) }),
+      inputSchema: z.object({ query: z.string() }),
       execute: ({ query }) =>
         safe(async () =>
-          (await searchFoods(user.id, query, 8)).map((f) => ({
+          (await searchFoods(user.id, query.slice(0, 60), 8)).map((f) => ({
             name: f.name,
             per100g: { kcal: f.caloriesPer100g, protein: f.proteinPer100g, carbs: f.carbsPer100g, fat: f.fatPer100g },
           })),
@@ -58,19 +58,33 @@ export function coachTools(user: AppUser, today: string) {
     logFood: tool({
       description:
         "Log food the user says they ate TODAY. Only call when the user clearly asks you to log it. Describe quantities in plain words, e.g. '2 chapati and 1 bowl dal'.",
-      inputSchema: z.object({ description: z.string().min(2).max(300), mealType }),
+      inputSchema: z.object({ description: z.string(), mealType }),
       execute: ({ description, mealType }) =>
-        safe(async () => ({ logged: await logFoodFromText(user.id, { text: description, mealType, date: today }) })),
+        safe(async () => {
+          if (description.trim().length < 2) return { error: "Describe what was eaten." };
+          return { logged: await logFoodFromText(user.id, { text: description.slice(0, 300), mealType, date: today }) };
+        }),
     }),
     logWater: tool({
       description: "Log water the user drank today, in millilitres. Only when asked.",
-      inputSchema: z.object({ amountMl: z.number().int().min(50).max(3000) }),
-      execute: ({ amountMl }) => safe(async () => (await logWater(user.id, today, amountMl), { loggedMl: amountMl })),
+      inputSchema: z.object({ amountMl: z.number().describe("50 to 3000") }),
+      execute: ({ amountMl }) =>
+        safe(async () => {
+          const ml = Math.round(amountMl);
+          if (!(ml >= 50 && ml <= 3000)) return { error: "Water must be between 50 and 3000 ml." };
+          await logWater(user.id, today, ml);
+          return { loggedMl: ml };
+        }),
     }),
     logWeight: tool({
       description: "Log today's body weight in kg. Only when the user gives a number and asks to log it.",
-      inputSchema: z.object({ weightKg: z.number().min(25).max(350) }),
-      execute: ({ weightKg }) => safe(async () => (await logWeight(user.id, { date: today, weightKg }), { loggedKg: weightKg })),
+      inputSchema: z.object({ weightKg: z.number() }),
+      execute: ({ weightKg }) =>
+        safe(async () => {
+          if (!(weightKg >= 25 && weightKg <= 350)) return { error: "That weight looks wrong (25–350 kg)." };
+          await logWeight(user.id, { date: today, weightKg });
+          return { loggedKg: weightKg };
+        }),
     }),
   };
 }

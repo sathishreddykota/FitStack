@@ -119,9 +119,9 @@ export async function streamCoachReply(user: AppUser, today: string, conversatio
 // ── Daily insight ───────────────────────────────────────────────────
 
 const InsightSchema = z.object({
-  title: z.string().max(60).describe("Short, specific headline, e.g. 'Protein short 3 days running'"),
-  insight: z.string().max(280).describe("1–2 sentences on what the data shows, with real numbers"),
-  action: z.string().max(200).describe("One concrete thing to do today"),
+  title: z.string().describe("Short, specific headline, e.g. 'Protein short 3 days running'"),
+  insight: z.string().describe("1–2 sentences on what the data shows, with real numbers"),
+  action: z.string().describe("One concrete thing to do today"),
 });
 
 export async function getDailyInsight(user: AppUser, today: string, opts: { refresh?: boolean } = {}) {
@@ -145,6 +145,10 @@ export async function getDailyInsight(user: AppUser, today: string, opts: { refr
     prompt: JSON.stringify({ profile: profileSummary(user), last7Days: history, today: todayData, upcoming: upcoming.slice(0, 2) }),
   });
 
+  // Trim here rather than with schema limits (see nutrition/ai-log.ts).
+  output.title = output.title.trim().slice(0, 80);
+  output.insight = output.insight.trim().slice(0, 400);
+  output.action = output.action.trim().slice(0, 300);
   await prisma.aIInsight.upsert({
     where: { userId_day: { userId: user.id, day } },
     create: { userId: user.id, day, title: output.title, insight: output.insight, action: output.action },

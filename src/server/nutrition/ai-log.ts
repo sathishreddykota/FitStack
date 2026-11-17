@@ -13,20 +13,42 @@ import { createCustomFood, logFood, searchFoods, type FoodResult } from "./servi
 // food is only created when nothing matches, and is reused next time.
 // ─────────────────────────────────────────────
 
+// Keep the schema sent to the model PLAIN: Gemini rejects structured-output schemas with
+// numeric min/max bounds ("too many states for serving"). Limits are enforced after parsing.
 const ParsedItem = z.object({
-  name: z.string().min(1).max(80).describe("Common name of the food, singular, no quantity. e.g. 'Boiled Egg', 'Chapati', 'Dal Tadka'"),
-  quantity: z.number().positive().max(5000).describe("How much, in `unit`. '3 eggs' → 3, '200g rice' → 200"),
+  name: z.string().describe("Common name of the food, singular, no quantity. e.g. 'Boiled Egg', 'Chapati', 'Dal Tadka'"),
+  quantity: z.number().describe("How much, in `unit`. '3 eggs' → 3, '200g rice' → 200"),
   unit: z.enum(ALL_UNITS as [string, ...string[]]).describe("Unit for quantity. Use piece for countable items"),
-  gramsPerUnit: z.number().positive().max(2000).describe("Estimated grams in ONE unit (1 egg ≈ 50, 1 chapati ≈ 40, 1 g = 1)"),
-  caloriesPer100g: z.number().min(0).max(900),
-  proteinPer100g: z.number().min(0).max(100),
-  carbsPer100g: z.number().min(0).max(100),
-  fatPer100g: z.number().min(0).max(100),
-  fiberPer100g: z.number().min(0).max(100),
+  gramsPerUnit: z.number().describe("Estimated grams in ONE unit (1 egg ≈ 50, 1 chapati ≈ 40, 1 g = 1)"),
+  caloriesPer100g: z.number(),
+  proteinPer100g: z.number(),
+  carbsPer100g: z.number(),
+  fatPer100g: z.number(),
+  fiberPer100g: z.number(),
 });
-const ParsedMeal = z.object({ items: z.array(ParsedItem).max(15) });
+const ParsedMeal = z.object({ items: z.array(ParsedItem) });
 
 export type ParsedFood = z.infer<typeof ParsedItem>;
+
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo));
+
+/** Enforce sane limits on model output; drops items that can't be logged. */
+export function sanitizeParsedFoods(items: ParsedFood[]): ParsedFood[] {
+  return items
+    .filter((i) => i.name?.trim() && i.quantity > 0 && i.gramsPerUnit > 0)
+    .slice(0, 15)
+    .map((i) => ({
+      ...i,
+      name: i.name.trim().slice(0, 80),
+      quantity: clamp(i.quantity, 0.1, 5000),
+      gramsPerUnit: clamp(i.gramsPerUnit, 0.1, 2000),
+      caloriesPer100g: clamp(i.caloriesPer100g, 0, 900),
+      proteinPer100g: clamp(i.proteinPer100g, 0, 100),
+      carbsPer100g: clamp(i.carbsPer100g, 0, 100),
+      fatPer100g: clamp(i.fatPer100g, 0, 100),
+      fiberPer100g: clamp(i.fiberPer100g, 0, 100),
+    }));
+}
 
 export async function parseFoodText(text: string): Promise<ParsedFood[]> {
   const { output } = await generateText({
@@ -40,7 +62,7 @@ export async function parseFoodText(text: string): Promise<ParsedFood[]> {
     ].join("\n"),
     prompt: quoteUserText(text, 600),
   });
-  return output.items;
+  return sanitizeParsedFoods(output.items);
 }
 
 const normalize = (s: string) =>
@@ -51,16 +73,42 @@ const normalize = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+/** "Roti / Chapati (1 piece)" → ["roti", "chapati"] — each part of a slash name is an alias. */
+const aliases = (s: string) =>
+  s
+    .replace(/\(.*?\)/g, " ")
+    .split("/")
+    .map(normalize)
+    .filter(Boolean);
+
 /** Pick an existing food that clearly is the same thing, or null. */
-export function pickMatch(name: string, candidates: Pick<FoodResult, "name" | "isVerified" | "createdByUserId">[], userId: string) {
+export function pickMatch<C extends Pick<FoodResult, "name" | "isVerified" | "createdByUserId">>(
+  name: string,
+  candidates: C[],
+  userId: string,
+): C | null {
   const target = normalize(name);
   if (!target) return null;
-  const exact = candidates.find((c) => normalize(c.name) === target);
+  const trusted = (c: C) => c.isVerified || c.createdByUserId === userId;
+
+  // 1. Same name, or same as one of its aliases ("chapati" ↔ "Roti / Chapati").
+  const exact = candidates.find((c) => normalize(c.name) === target || aliases(c.name).includes(target));
   if (exact) return exact;
-  // "white rice" ↔ "White Rice (Cooked)" — prefix match on verified or the user's own foods only.
+
+  // Single words stay strict from here on, so "dal" never becomes "Dal Makhani".
+  const words = target.split(" ");
+  if (words.length < 2) return null;
+
+  // 2. Exactly one extra word anywhere: "dal tadka" ↔ "Yellow Dal Tadka", "brown rice" ↔ "Brown Rice Basmati".
+  //    More extra words usually means a different dish ("Paneer Tikka Masala Gravy").
   return (
     candidates.find(
-      (c) => (c.isVerified || c.createdByUserId === userId) && normalize(c.name).startsWith(target + " "),
+      (c) =>
+        trusted(c) &&
+        aliases(c.name).some((a) => {
+          const aw = a.split(" ");
+          return aw.length === words.length + 1 && words.every((w) => aw.includes(w));
+        }),
     ) ?? null
   );
 }

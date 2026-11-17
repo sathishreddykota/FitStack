@@ -19,14 +19,17 @@ const Parsed = z.object({
         sets: z
           .array(
             z.object({
-              weightKg: z.number().min(0).max(500).nullable().describe("kg; convert lbs (×0.4536); null for bodyweight"),
-              reps: z.number().int().min(0).max(200).nullable(),
+              weightKg: z.number().nullable().describe("kg; convert lbs (×0.4536); null for bodyweight"),
+              reps: z.number().nullable().describe("whole number of reps"),
             }),
-          )
-          .max(20),
+          ),
       }),
-    )
-    .max(15),
+    ),
+});
+// No numeric bounds in the model schema (Gemini rejects them); limits are applied below.
+const cleanSet = (s: { weightKg: number | null; reps: number | null }) => ({
+  weightKg: s.weightKg == null || !Number.isFinite(s.weightKg) ? null : Math.min(500, Math.max(0, Math.round(s.weightKg * 4) / 4)),
+  reps: s.reps == null || !Number.isFinite(s.reps) ? null : Math.min(200, Math.max(0, Math.round(s.reps))),
 });
 
 export async function logWorkoutFromText(userId: string, sessionId: string, text: string) {
@@ -60,7 +63,10 @@ export async function logWorkoutFromText(userId: string, sessionId: string, text
     throw new HttpError(502, "Couldn't understand that. Try e.g. 'bench press 3x8 at 60kg'.", "AI_UNAVAILABLE");
   }
 
-  const valid = parsed.exercises.filter((e) => ids.has(e.exerciseId) && e.sets.length > 0);
+  const valid = parsed.exercises
+    .filter((e) => ids.has(e.exerciseId) && e.sets.length > 0)
+    .slice(0, 15)
+    .map((e) => ({ ...e, sets: e.sets.slice(0, 20).map(cleanSet) }));
   if (valid.length === 0) {
     throw new HttpError(422, "No known exercises found. Try naming them like 'squat' or 'lat pulldown'.", "VALIDATION");
   }

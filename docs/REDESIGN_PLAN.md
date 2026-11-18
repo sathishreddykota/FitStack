@@ -41,3 +41,19 @@ Colour appears only when it means something. Text contrast at least 4.5:1 on Nig
 
 Features, data and layouts stay the same unless a screen's concept says otherwise; this is a
 look-and-feel pass. Anything that would change how a feature works gets asked about first.
+
+## Status (19 Nov 2026)
+
+All six steps done and committed on `upgrade` (fee52dc → 2b7fc07). Production build passes,
+lint has 0 errors, 139 tests pass. Every signed-in and public screen was scanned at phone size
+for leftover light-theme backgrounds and for text contrast (WCAG AA); the few misses were fixed.
+
+Checked on the real phone (Redmi Note 13 Pro): Dashboard, Nutrition, Train, Run, Coach,
+Notification settings. Checked in the browser at phone size: Progress, Recovery, Water, Profile,
+Settings, Subscription, Calendar, Plan builder, Onboarding, landing, legal pages, sign-in.
+
+Still to look at with your own eyes:
+- The new app icon on your home screen, and that the app opens on a dark screen (no white flash).
+- Motion feel: numbers counting up, rings drawing in, food popping in after logging, the lime
+  pulse when a goal is hit (needs a day with logged food to see).
+- A workout session with a personal record (the lime trophy).

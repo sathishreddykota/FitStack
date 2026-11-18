@@ -38,7 +38,7 @@ export function WaterTracker({ currentAmountMl, targetMl, onAdd }: WaterTrackerP
           <div className="relative h-64 w-64 rounded-full border-8 border-[var(--color-surface-2)] bg-[var(--color-surface-1)] shadow-inner overflow-hidden flex items-center justify-center">
             
             {/* Background color of empty tank */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-500/10 z-0" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[var(--color-info-500)]/10 z-0" />
 
             {/* The animated waves */}
             <div 
@@ -46,14 +46,14 @@ export function WaterTracker({ currentAmountMl, targetMl, onAdd }: WaterTrackerP
               style={{ height: `${percent}%` }}
             >
               {/* Wave 1 (Back) */}
-              <div className="absolute inset-0 bg-blue-400/40 rounded-[40%] animate-wave-slow origin-bottom" style={{ marginBottom: '-50%' }} />
+              <div className="absolute inset-0 bg-[var(--color-info-400)]/40 rounded-[40%] animate-wave-slow origin-bottom" style={{ marginBottom: '-50%' }} />
               {/* Wave 2 (Front) */}
-              <div className="absolute inset-0 bg-blue-500/80 rounded-[45%] animate-wave-fast origin-bottom" style={{ marginBottom: '-50%' }} />
+              <div className="absolute inset-0 bg-[var(--color-info-500)]/80 rounded-[45%] animate-wave-fast origin-bottom" style={{ marginBottom: '-50%' }} />
             </div>
 
             {/* Text Overlay */}
             <div className="relative z-20 flex flex-col items-center justify-center text-center">
-              <Droplets className={cn("h-8 w-8 mb-2 transition-colors duration-500", percent > 50 ? "text-white/90" : "text-blue-400")} />
+              <Droplets className={cn("h-8 w-8 mb-2 transition-colors duration-500", percent > 50 ? "text-white/90" : "text-[var(--color-info-400)]")} />
               <span className={cn("text-5xl font-black tracking-tighter transition-colors duration-500", percent > 50 ? "text-white" : "text-[var(--color-text-primary)]")}>
                 {percent}%
               </span>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { Toaster } from "sonner";
@@ -16,6 +16,14 @@ import { NativeAuthBridge } from "@/components/auth/native-auth-bridge";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+// Numbers and headlines (Ember Night)
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
@@ -69,7 +77,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0f",
+  themeColor: "#0A0A0F",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -91,13 +99,14 @@ export default function RootLayout({
       appearance={{
         baseTheme: dark,
         variables: {
-          colorPrimary: "oklch(65% 0.24 35)", // Neon Orange
+          colorPrimary: "#FF6B2C", // Ember
+          colorTextOnPrimaryBackground: "#0A0A0F",
         },
       }}
     >
       <html
         lang="en-IN"
-        className={`${inter.variable} h-full`}
+        className={`${inter.variable} ${spaceGrotesk.variable} h-full`}
         suppressHydrationWarning
       >
         <head>
@@ -112,9 +121,9 @@ export default function RootLayout({
             position="top-center"
             toastOptions={{
               style: {
-                background: "oklch(14% 0.01 260)",
-                border: "1px solid oklch(22% 0.015 260)",
-                color: "oklch(96% 0.005 260)",
+                background: "#1C1C26",
+                border: "1px solid #2E2E3A",
+                color: "#F4F4F6",
               },
             }}
           />

@@ -237,7 +237,7 @@ export function SessionClient({ initial, isPro }: { initial: SessionData; isPro:
           <button
             onClick={finish}
             disabled={busy === "finish" || completedSets === 0}
-            className="rounded-xl bg-[var(--color-brand-500)] px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+            className="rounded-xl bg-[var(--color-brand-500)] px-4 py-2 text-sm font-bold text-[var(--color-on-brand)] disabled:opacity-40"
           >
             {busy === "finish" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Finish"}
           </button>
@@ -378,7 +378,7 @@ export function SessionClient({ initial, isPro }: { initial: SessionData; isPro:
                 onClick={() => (isPro ? setMagicOpen(true) : router.push("/settings/subscription"))}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 text-sm font-bold text-[var(--color-text-primary)]"
               >
-                <Sparkles className="h-5 w-5 text-purple-400" /> Log by voice or text {!isPro && "· PRO"}
+                <Sparkles className="h-5 w-5 text-[var(--color-brand-400)]" /> Log by voice or text {!isPro && "· PRO"}
               </button>
             ) : (
               <div className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4">
@@ -390,7 +390,7 @@ export function SessionClient({ initial, isPro }: { initial: SessionData; isPro:
                     value={magicText}
                     onChange={(e) => setMagicText(e.target.value)}
                     disabled={busy === "magic"}
-                    className="w-full resize-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-0)] px-4 py-3 pr-12 text-sm text-[var(--color-text-primary)] focus:border-purple-500 focus:outline-none"
+                    className="w-full resize-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-0)] px-4 py-3 pr-12 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-brand-500)] focus:outline-none"
                   />
                   {speech.supported && (
                     <button
@@ -407,7 +407,7 @@ export function SessionClient({ initial, isPro }: { initial: SessionData; isPro:
                   <button
                     onClick={submitMagic}
                     disabled={!magicText.trim() || busy === "magic"}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-500 py-3 text-sm font-bold text-white disabled:opacity-50"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-brand-500)] py-3 text-sm font-bold text-[var(--color-on-brand)] disabled:opacity-50"
                   >
                     {busy === "magic" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     {busy === "magic" ? "Reading…" : "Add to workout"}

@@ -14,7 +14,7 @@ export default function OfflinePage() {
       <p className="max-w-sm text-[var(--color-text-secondary)]">
         FitStack needs a connection to load your data. Your logs are safe — reconnect and try again.
       </p>
-      <a href="/dashboard" className="rounded-full bg-[var(--color-brand-500)] px-6 py-3 font-bold text-white">
+      <a href="/dashboard" className="rounded-full bg-[var(--color-brand-500)] px-6 py-3 font-bold text-[var(--color-on-brand)]">
         Try again
       </a>
     </main>

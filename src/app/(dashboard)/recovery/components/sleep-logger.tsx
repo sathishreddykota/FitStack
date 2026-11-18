@@ -106,7 +106,7 @@ export function SleepLogger({ initialDuration, initialQuality, onSave }: SleepLo
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="w-full rounded-xl bg-[var(--color-brand-500)] py-3 font-bold text-white transition-all hover:bg-[var(--color-brand-600)] active:scale-[0.98] disabled:opacity-50"
+          className="w-full rounded-xl bg-[var(--color-brand-500)] py-3 font-bold text-[var(--color-on-brand)] transition-all hover:bg-[var(--color-brand-600)] active:scale-[0.98] disabled:opacity-50"
         >
           {isSaving ? "Saving..." : "Save Sleep Log"}
         </button>

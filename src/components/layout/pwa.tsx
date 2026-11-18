@@ -56,7 +56,7 @@ export function PwaSupport() {
           await promptEvent.userChoice;
           setPromptEvent(null);
         }}
-        className="rounded-lg bg-[var(--color-brand-500)] px-3 py-1.5 text-sm font-bold text-white"
+        className="rounded-lg bg-[var(--color-brand-500)] px-3 py-1.5 text-sm font-bold text-[var(--color-on-brand)]"
       >
         Install
       </button>

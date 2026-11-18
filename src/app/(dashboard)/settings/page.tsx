@@ -62,7 +62,7 @@ export default function SettingsPage() {
               profileSectionTitle: "text-[var(--color-text-primary)] border-b border-[var(--color-border)]",
               profileSectionTitleText: "text-[var(--color-text-primary)]",
               profileSectionContent: "text-[var(--color-text-muted)]",
-              formButtonPrimary: "bg-[var(--color-brand-500)] hover:bg-[var(--color-brand-600)] text-white shadow-none",
+              formButtonPrimary: "bg-[var(--color-brand-500)] hover:bg-[var(--color-brand-600)] text-[var(--color-on-brand)] shadow-none",
               formFieldLabel: "text-[var(--color-text-primary)]",
               formFieldInput: "bg-[var(--color-surface-2)] border-[var(--color-border)] text-[var(--color-text-primary)]",
               footerActionLink: "text-[var(--color-brand-400)] hover:text-[var(--color-brand-500)]",

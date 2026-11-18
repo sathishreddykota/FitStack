@@ -150,7 +150,7 @@ function ChatPane({ id, initialMessages, onActivity }: { id: string; initialMess
               <Square className="h-4 w-4" />
             </button>
           ) : (
-            <button type="submit" disabled={!input.trim()} aria-label="Send" className="absolute bottom-2 right-2 top-2 rounded-full bg-[var(--color-brand-500)] p-3 text-white disabled:opacity-50">
+            <button type="submit" disabled={!input.trim()} aria-label="Send" className="absolute bottom-2 right-2 top-2 rounded-full bg-[var(--color-brand-500)] p-3 text-[var(--color-on-brand)] disabled:opacity-50">
               <Send className="h-4 w-4" />
             </button>
           )}

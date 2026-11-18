@@ -233,7 +233,7 @@ export function ProfileClient({ user, profile, targets }: Props) {
           <button
             type="submit"
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-xl bg-[var(--color-brand-500)] px-8 py-3 font-bold text-white transition-all hover:bg-[var(--color-brand-600)] active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-[var(--color-brand-500)] px-8 py-3 font-bold text-[var(--color-on-brand)] transition-all hover:bg-[var(--color-brand-600)] active:scale-95 disabled:opacity-50"
           >
             {isSaving ? "Saving..." : (<><Save className="h-4 w-4" /> Save profile</>)}
           </button>

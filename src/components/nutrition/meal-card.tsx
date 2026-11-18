@@ -219,7 +219,7 @@ export function MealCard({
 
         {/* Items */}
         {expanded && (
-          <div className="border-t border-[var(--color-border-subtle)] bg-white/50">
+          <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-0)]/60">
             {hasItems ? (
               <div className="divide-y divide-[var(--color-border-subtle)]">
                 {items.map((item) => (
@@ -240,7 +240,7 @@ export function MealCard({
                     onClick={() => setModalOpen(true)}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold shadow-sm",
-                      "bg-[var(--color-brand-500)] text-white",
+                      "bg-[var(--color-brand-500)] text-[var(--color-on-brand)]",
                       "hover:bg-[var(--color-brand-400)] transition-all duration-200 hover:-translate-y-0.5",
                     )}
                   >
@@ -252,7 +252,7 @@ export function MealCard({
                     onClick={() => setIsMagicLogging(true)}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold shadow-sm",
-                      "bg-white border border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-brand-400)] hover:text-[var(--color-brand-500)] transition-all",
+                      "bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-brand-400)] hover:text-[var(--color-brand-500)] transition-all",
                     )}
                   >
                     <Sparkles className="h-4 w-4" />
@@ -265,7 +265,7 @@ export function MealCard({
                         onClick={() => setIsSaving(true)}
                         className={cn(
                           "flex-none px-4 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold shadow-sm",
-                          "bg-white border border-[var(--color-border)] text-[var(--color-text-primary)] hover:text-red-500",
+                          "bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-primary)] hover:text-red-500",
                           "hover:bg-[var(--color-surface-2)] transition-all hover:-translate-y-0.5"
                         )}
                         title="Save as Meal"
@@ -283,7 +283,7 @@ export function MealCard({
                     autoFocus
                     type="text" 
                     placeholder="e.g. 2 eggs and a slice of toast" 
-                    className="flex-1 rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm focus:outline-none focus:border-[var(--color-brand-500)] shadow-sm"
+                    className="flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3 text-sm focus:outline-none focus:border-[var(--color-brand-500)] shadow-sm"
                     value={magicText}
                     onChange={(e) => setMagicText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && submitMagicLog()}
@@ -291,14 +291,14 @@ export function MealCard({
                   <button 
                     onClick={submitMagicLog}
                     disabled={!magicText.trim() || isSubmitting}
-                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-brand-500)] text-white disabled:opacity-50 shadow-sm flex items-center gap-2"
+                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-brand-500)] text-[var(--color-on-brand)] disabled:opacity-50 shadow-sm flex items-center gap-2"
                   >
                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </button>
                   <button 
                     onClick={() => { setIsMagicLogging(false); setMagicText(""); }}
                     disabled={isSubmitting}
-                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-white border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shadow-sm"
+                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shadow-sm"
                   >
                     Cancel
                   </button>
@@ -311,7 +311,7 @@ export function MealCard({
                     autoFocus
                     type="text" 
                     placeholder="Meal Name (e.g., Morning Oats)" 
-                    className="flex-1 rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm focus:outline-none focus:border-[var(--color-brand-500)] shadow-sm"
+                    className="flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3 text-sm focus:outline-none focus:border-[var(--color-brand-500)] shadow-sm"
                     value={mealName}
                     onChange={(e) => setMealName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSaveMeal()}
@@ -319,14 +319,14 @@ export function MealCard({
                   <button 
                     onClick={handleSaveMeal}
                     disabled={!mealName.trim() || isSubmitting}
-                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-brand-500)] text-white disabled:opacity-50 shadow-sm"
+                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-brand-500)] text-[var(--color-on-brand)] disabled:opacity-50 shadow-sm"
                   >
                     {isSubmitting ? "Saving..." : "Save"}
                   </button>
                   <button 
                     onClick={() => { setIsSaving(false); setMealName(""); }}
                     disabled={isSubmitting}
-                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-white border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shadow-sm"
+                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shadow-sm"
                   >
                     Cancel
                   </button>

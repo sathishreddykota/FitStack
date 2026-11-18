@@ -535,7 +535,7 @@ export default function OnboardingPage() {
                         className={cn(
                           "flex h-12 w-12 items-center justify-center rounded-xl border text-sm font-bold transition-all",
                           formData.trainingDaysPerWeek === d
-                            ? "brand-gradient border-transparent text-white shadow-[var(--shadow-glow-brand)]"
+                            ? "brand-gradient border-transparent text-[var(--color-on-brand)] shadow-[var(--shadow-glow-brand)]"
                             : "border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-3)]",
                         )}
                       >

@@ -116,7 +116,7 @@ export function LogWeightModal({ isOpen, onClose, currentWeight }: LogWeightModa
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl brand-gradient py-3.5 font-bold text-white shadow-[var(--shadow-glow-brand)] transition-transform active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 hover:brightness-110"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl brand-gradient py-3.5 font-bold text-[var(--color-on-brand)] shadow-[var(--shadow-glow-brand)] transition-transform active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 hover:brightness-110"
           >
             {isSubmitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />

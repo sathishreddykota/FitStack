@@ -77,7 +77,7 @@ export function SubscriptionClient({ plan, price, payments, prefill }: Props) {
         name: "FitStack PRO",
         description: `${price.days} days of PRO`,
         prefill,
-        theme: { color: "#FF5722" },
+        theme: { color: "#FF6B2C" },
         handler: async (res: RazorpayResponse) => {
           try {
             const result = await api<{ status: string; proUntil: string | null }>("/api/razorpay/verify", { body: res });
@@ -154,7 +154,7 @@ export function SubscriptionClient({ plan, price, payments, prefill }: Props) {
           )}
         </div>
 
-        <div className="relative overflow-hidden rounded-3xl border border-[var(--color-brand-500)] bg-[var(--color-surface-1)] p-8 shadow-[0_0_30px_rgba(255,87,34,0.15)]">
+        <div className="relative overflow-hidden rounded-3xl border border-[var(--color-brand-500)] bg-[var(--color-surface-1)] p-8 shadow-[0_0_30px_rgba(255,107,44,0.15)]">
           <h3 className="mb-2 text-2xl font-black text-[var(--color-brand-400)]">PRO</h3>
           <p className="mb-6 flex items-end gap-2 text-[var(--color-text-primary)]">
             <span className="text-5xl font-black">{rupees(price.amountPaise)}</span>

@@ -39,7 +39,7 @@ export function DateRangeToggle() {
             className={cn(
               "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
               isActive
-                ? "bg-[var(--color-brand-500)] text-white shadow-sm"
+                ? "bg-[var(--color-brand-500)] text-[var(--color-on-brand)] shadow-sm"
                 : "text-[var(--color-text-muted)] hover:bg-[var(--color-background)] hover:text-[var(--color-text-primary)]"
             )}
           >

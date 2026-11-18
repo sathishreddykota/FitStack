@@ -34,7 +34,7 @@ const elements = {
 };
 
 const variables = {
-  colorPrimary: "oklch(65% 0.24 35)", // Neon Orange
+  colorPrimary: "#FF6B2C", // Ember
   colorTextOnPrimaryBackground: "black",
   colorBackground: "transparent",
   colorInputText: "white",

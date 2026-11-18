@@ -137,7 +137,7 @@ export function PlanGeneratorClient({ isPro, defaults }: { isPro: boolean; defau
               <button
                 onClick={save}
                 disabled={busy}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--color-brand-500)] py-3 font-bold text-white disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--color-brand-500)] py-3 font-bold text-[var(--color-on-brand)] disabled:opacity-50"
               >
                 {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : isPro ? <Zap className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
                 {isPro ? "Start this plan" : "Get PRO to start this plan"}
@@ -191,7 +191,7 @@ export function PlanGeneratorClient({ isPro, defaults }: { isPro: boolean; defau
               <button
                 onClick={() => (last ? loadPreview() : setStep((s) => s + 1))}
                 disabled={busy}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--color-brand-500)] py-3 font-bold text-white disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--color-brand-500)] py-3 font-bold text-[var(--color-on-brand)] disabled:opacity-50"
               >
                 {busy && <Loader2 className="h-5 w-5 animate-spin" />}
                 {last ? "Preview my plan" : "Next"}

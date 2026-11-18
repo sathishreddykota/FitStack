@@ -151,7 +151,7 @@ export function Sidebar({ subInfo }: { subInfo?: { isTrial: boolean; daysLeft: n
             <p className="text-xs text-[var(--color-text-secondary)] mb-2">
               {subInfo.isTrial ? `${subInfo.daysLeft} ${subInfo.daysLeft === 1 ? 'day' : 'days'} of PRO left.` : 'AI coach, plans & analytics for ₹199/mo.'}
             </p>
-            <Link href="/settings/subscription" className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-white py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
+            <Link href="/settings/subscription" className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-[var(--color-on-brand)] py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
               Get PRO
             </Link>
           </div>
@@ -275,7 +275,7 @@ export function MobileSidebar({
               <p className="text-xs text-[var(--color-text-secondary)] mb-2">
                 {subInfo.isTrial ? `${subInfo.daysLeft} ${subInfo.daysLeft === 1 ? 'day' : 'days'} of PRO left.` : 'AI coach, plans & analytics for ₹199/mo.'}
               </p>
-              <Link href="/settings/subscription" onClick={onClose} className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-white py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
+              <Link href="/settings/subscription" onClick={onClose} className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-[var(--color-on-brand)] py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
                 Get PRO
               </Link>
             </div>

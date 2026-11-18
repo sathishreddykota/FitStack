@@ -37,7 +37,7 @@ export function DailySummary({
   const resolvedFiberTarget = fiberTarget ?? Math.round(proteinTarget / 4);
 
   return (
-    <div className="rounded-3xl border-none bg-white p-8 shadow-card relative overflow-hidden">
+    <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-8 shadow-card relative overflow-hidden">
       {/* Decorative background element */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-brand-500)] opacity-5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
       

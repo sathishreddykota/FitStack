@@ -121,7 +121,7 @@ export function CalendarClient({ today, initialSessions }: { today: string; init
                 <span
                   className={cn(
                     "mb-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold",
-                    day === today ? "bg-[var(--color-brand-500)] text-white" : "text-[var(--color-text-primary)]",
+                    day === today ? "bg-[var(--color-brand-500)] text-[var(--color-on-brand)]" : "text-[var(--color-text-primary)]",
                   )}
                 >
                   {Number(day.slice(8))}

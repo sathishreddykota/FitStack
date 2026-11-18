@@ -20,6 +20,8 @@ const isPublicRoute = createRouteMatcher([
   "/offline",
   // Webhooks authenticate with their own signatures
   "/api/webhooks(.*)",
+  // The notification scheduler authenticates with CRON_SECRET
+  "/api/cron(.*)",
 ]);
 
 const isApiRoute = createRouteMatcher(["/api(.*)"]);

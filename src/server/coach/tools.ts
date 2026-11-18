@@ -8,6 +8,7 @@ import { searchFoods } from "../nutrition/service";
 import { logWater, logWeight } from "../tracking";
 import { recentHistory, todaySummary, upcomingWorkouts } from "./context";
 import { runningForCoach } from "../activity/service";
+import { notifyAchievements } from "../notifications/notify";
 
 // ─────────────────────────────────────────────
 // Tools the AI coach can call. Every tool is bound to the signed-in user —
@@ -69,7 +70,9 @@ export function coachTools(user: AppUser, today: string) {
       execute: ({ description, mealType }) =>
         safe(async () => {
           if (description.trim().length < 2) return { error: "Describe what was eaten." };
-          return { logged: await logFoodFromText(user.id, { text: description.slice(0, 300), mealType, date: today }) };
+          const logged = await logFoodFromText(user.id, { text: description.slice(0, 300), mealType, date: today });
+          await notifyAchievements(user.id);
+          return { logged };
         }),
     }),
     logWater: tool({

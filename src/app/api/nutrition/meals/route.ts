@@ -4,6 +4,7 @@ import { requireApiUser, todayOf } from "@/server/auth";
 import { dateStringSchema } from "@/server/dates";
 import { dailyTotals, getDayMeals, logFood } from "@/server/nutrition/service";
 import { logFoodSchema } from "@/server/schemas";
+import { achievementsAfterResponse } from "@/server/notifications/notify";
 
 // GET /api/nutrition/meals?date=YYYY-MM-DD  (defaults to the user's today)
 export const GET = route("GET /api/nutrition/meals", async (req) => {
@@ -18,5 +19,7 @@ export const GET = route("GET /api/nutrition/meals", async (req) => {
 export const POST = route("POST /api/nutrition/meals", async (req) => {
   const user = await requireApiUser();
   const body = await parseBody(req, logFoodSchema);
-  return ok(await logFood(user.id, body), { status: 201 });
+  const item = await logFood(user.id, body);
+  achievementsAfterResponse(user.id);
+  return ok(item, { status: 201 });
 });

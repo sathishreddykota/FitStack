@@ -106,3 +106,19 @@ First launch → ask permission ──►  POST /api/push/devices (save token)
 - **Production:** after deploying, run [`supabase-notifications-cron.sql`](supabase-notifications-cron.sql)
   once in Supabase → SQL Editor (fill in the domain and a fresh secret first).
 - **Phone test:** [`PHONE_TEST.md`](PHONE_TEST.md).
+
+## Real-phone test (2026-11-18, Redmi Note 13 Pro 5G, Android 15, debug build)
+
+| Check | Result |
+|---|---|
+| Offer card after logging food → Android permission → phone registered | ✅ |
+| Test notification via Firebase (⚡ icon, orange, "Reminders & goals" channel) | ✅ |
+| "Protein goal hit 💪" right after a log, once | ✅ |
+| Day-1 rule held it back on the account's signup day | ✅ (as designed) |
+| Scheduler: "Almost there for today" summary; second run sends nothing | ✅ |
+| Tap opens the app on the Dashboard | ✅ |
+| Sign-out removes the phone; scheduler finds 0 phones | ✅ |
+
+Found and fixed on the phone: sign-in redirect opened Chrome, header under the status bar,
+dark status-bar icons. Still open: **"Continue with Google" opens Chrome** (Google blocks its
+sign-in inside app web views) — needs an in-app browser-tab flow before the Play Store.

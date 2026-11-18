@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { api, ApiError } from "@/lib/api-client";
 
 interface AIInsight {
@@ -81,7 +80,7 @@ export function AIInsightCard() {
                     <ArrowRight className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Today's Action</h4>
+                    <h4 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Today&apos;s Action</h4>
                     <p className="text-sm text-[var(--color-text-secondary)]">{insight.actionableAdvice}</p>
                   </div>
                 </div>

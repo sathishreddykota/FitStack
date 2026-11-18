@@ -8,15 +8,19 @@ import { HabitSliders } from "./components/habit-sliders";
 import { RecoveryTrendsChart } from "./components/recovery-trends-chart";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { toast } from "sonner";
+import type { recoveryForDay, recoveryTrend } from "@/server/tracking";
+
+type RecoveryDay = Awaited<ReturnType<typeof recoveryForDay>>;
+type RecoveryTrend = Awaited<ReturnType<typeof recoveryTrend>>;
 
 interface RecoveryClientProps {
   todayStr: string;
   initialData: {
-    sleep: any | null;
-    habits: any | null;
+    sleep: RecoveryDay["sleep"];
+    habits: RecoveryDay["habits"];
   };
   trendsData: {
-    chartData: any[];
+    chartData: RecoveryTrend["chartData"];
     insights: {
       avgSleepHours: number;
       avgEnergy: number;
@@ -27,7 +31,7 @@ interface RecoveryClientProps {
 
 export function RecoveryClient({ todayStr, initialData, trendsData }: RecoveryClientProps) {
   const router = useRouter();
-  const [data, setData] = useState(initialData);
+  const [data] = useState(initialData);
 
   const handleSaveSleep = async (durationMinutes: number, quality: string) => {
     try {
@@ -39,7 +43,7 @@ export function RecoveryClient({ todayStr, initialData, trendsData }: RecoveryCl
       if (!res.ok) throw new Error("Failed to save sleep");
       toast.success("Sleep logged successfully");
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Failed to log sleep");
     }
   };
@@ -54,7 +58,7 @@ export function RecoveryClient({ todayStr, initialData, trendsData }: RecoveryCl
       if (!res.ok) throw new Error("Failed to save habits");
       toast.success("Readiness logged successfully");
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Failed to log habits");
     }
   };

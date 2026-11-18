@@ -19,7 +19,7 @@ export default function TermsPage() {
         <p>FitStack provides fitness tracking, nutrition logging, and AI coaching. You must use this app in compliance with all applicable laws and not for any unlawful purpose.</p>
 
         <h2 className="text-2xl font-semibold text-text-primary mt-8">3. Payments and Subscriptions</h2>
-        <p>FitStack offers premium features through "PRO". PRO is bought as a one-time payment for a fixed period (currently 30 days) and does not renew automatically. Payments are processed securely by Razorpay; FitStack never sees or stores your card or UPI details.</p>
+        <p>FitStack offers premium features through &quot;PRO&quot;. PRO is bought as a one-time payment for a fixed period (currently 30 days) and does not renew automatically. Payments are processed securely by Razorpay; FitStack never sees or stores your card or UPI details.</p>
 
         <h2 className="text-2xl font-semibold text-text-primary mt-8">4. Health Disclaimer</h2>
         <p>FitStack is not a medical professional. The fitness and nutrition data provided by the app (including the AI Coach) is for informational purposes only. Consult with a physician before starting any diet or exercise program.</p>

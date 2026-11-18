@@ -10,7 +10,7 @@ export default function ContactPage() {
     <div className="max-w-4xl mx-auto py-16 px-6">
       <h1 className="text-4xl font-bold tracking-tight mb-8">Contact Us</h1>
       <div className="prose prose-invert max-w-none text-text-secondary space-y-6">
-        <p>Have a question or need support with your FitStack account? We're here to help.</p>
+        <p>Have a question or need support with your FitStack account? We&apos;re here to help.</p>
 
         <div className="bg-surface-1 p-8 rounded-2xl border border-border mt-8">
           <h2 className="text-xl font-semibold text-text-primary mb-4">Support Channels</h2>

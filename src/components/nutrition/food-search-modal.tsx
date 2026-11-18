@@ -14,6 +14,13 @@ import { gramsPerUnit } from "@/server/nutrition/units";
 import { toast } from "sonner";
 import type { MealType, FoodSearchResult, ServingUnit } from "@/types/nutrition.types";
 
+/** Shape of GET /api/nutrition/saved-meals items used by this modal. */
+interface SavedMealSummary {
+  id: string;
+  name: string;
+  items: { quantityG: number; servingUnit: ServingUnit; food: { id: string; name: string } }[];
+}
+
 const SERVING_UNITS: ServingUnit[] = ["g", "kg", "ml", "L", "cup", "tbsp", "tsp", "piece", "slice", "serving", "scoop"];
 
 const MEAL_TYPE_LABELS: Record<MealType, string> = {
@@ -49,7 +56,7 @@ export function FoodSearchModal({
   const [unit, setUnit] = useState<ServingUnit>("g");
 
   const [activeTab, setActiveTab] = useState<"search" | "myMeals" | "quickAdd">("search");
-  const [savedMeals, setSavedMeals] = useState<any[]>([]);
+  const [savedMeals, setSavedMeals] = useState<SavedMealSummary[]>([]);
   const [loadingMeals, setLoadingMeals] = useState(false);
   const [addingMealId, setAddingMealId] = useState<string | null>(null);
 
@@ -63,7 +70,7 @@ export function FoodSearchModal({
       const fetchMeals = async () => {
         setLoadingMeals(true);
         try {
-          setSavedMeals(await api<any[]>("/api/nutrition/saved-meals"));
+          setSavedMeals(await api<SavedMealSummary[]>("/api/nutrition/saved-meals"));
         } catch (error) {
           console.error("Failed to fetch saved meals:", error);
         } finally {
@@ -276,7 +283,7 @@ export function FoodSearchModal({
                         </button>
                       </div>
                       <div className="text-xs text-[var(--color-text-muted)] line-clamp-2">
-                        {meal.items.map((item: any) => `${item.food.name} (${item.quantityG}${item.servingUnit})`).join(", ")}
+                        {meal.items.map((item) => `${item.food.name} (${item.quantityG}${item.servingUnit})`).join(", ")}
                       </div>
                     </div>
                   ))}

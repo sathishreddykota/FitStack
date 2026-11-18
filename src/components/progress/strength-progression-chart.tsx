@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import type { Payload } from "recharts/types/component/DefaultTooltipContent";
 
 interface StrengthData {
   date: string;
@@ -68,7 +69,7 @@ export function StrengthProgressionChart({ data }: StrengthProgressionChartProps
             }}
             itemStyle={{ color: "var(--color-text-primary)" }}
             labelStyle={{ color: "var(--color-text-muted)", marginBottom: "0.25rem" }}
-            formatter={(value: number, name: string, props: any) => {
+            formatter={(value: number, name: string, props: Payload<number, string>) => {
               if (name === "estimated1RM") return [`${value} kg`, "Est. 1RM"];
               if (name === "maxWeight") return [`${value} kg × ${props.payload.repsForMaxWeight}`, "Best Set"];
               return [value, name];

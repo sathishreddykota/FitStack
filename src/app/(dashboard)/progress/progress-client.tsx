@@ -12,6 +12,17 @@ import { MacroDistributionChart } from "@/components/progress/macro-distribution
 import { LogWeightModal } from "@/components/progress/log-weight-modal";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { formatRelativeDate } from "@/lib/utils";
+import type {
+  getNutritionAnalytics,
+  getRecentPRs,
+  getStrengthProgression,
+  getWorkoutAnalytics,
+} from "@/server/progress";
+
+type NutritionAnalytics = Awaited<ReturnType<typeof getNutritionAnalytics>>;
+type WorkoutAnalytics = Awaited<ReturnType<typeof getWorkoutAnalytics>>;
+type StrengthProgression = Awaited<ReturnType<typeof getStrengthProgression>>;
+type RecentPR = Awaited<ReturnType<typeof getRecentPRs>>[number];
 
 interface ProgressClientProps {
   range: 7 | 30 | 90 | "all";
@@ -24,9 +35,9 @@ interface ProgressClientProps {
     goalProgress: number;
   };
   nutritionData: {
-    chartData: any[];
+    chartData: NutritionAnalytics["chartData"];
     averages: { calories: number; protein: number; carbs: number; fat: number };
-    targets: any;
+    targets: NutritionAnalytics["targets"];
     daysTracked: number;
     adherence: { calories: number; protein: number };
   };
@@ -35,21 +46,20 @@ interface ProgressClientProps {
     totalSets: number;
     totalReps: number;
     totalVolume: number;
-    chartData: any[];
-    recentSessions: any[];
+    chartData: WorkoutAnalytics["chartData"];
+    recentSessions: WorkoutAnalytics["recentSessions"];
   };
   strengthData: {
-    chartData: any[];
+    chartData: StrengthProgression["chartData"];
     allTimeMax1RM: number;
     allTimeMaxWeight: number;
   };
-  recentPRs: any[];
+  recentPRs: RecentPR[];
   availableExercises: { id: string; name: string }[];
   selectedExerciseId: string;
 }
 
 export function ProgressClient({
-  range,
   weightData,
   nutritionData,
   workoutData,

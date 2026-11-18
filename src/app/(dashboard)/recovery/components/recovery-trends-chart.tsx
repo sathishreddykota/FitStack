@@ -9,9 +9,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import type { recoveryTrend } from "@/server/tracking";
 
 interface RecoveryTrendsChartProps {
-  data: any[];
+  data: Awaited<ReturnType<typeof recoveryTrend>>["chartData"];
 }
 
 export function RecoveryTrendsChart({ data }: RecoveryTrendsChartProps) {

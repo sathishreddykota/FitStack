@@ -82,7 +82,7 @@ export function ProgressSummaryCard({
         {/* Workouts & PRs Section */}
         <div className="flex flex-col items-start">
           <p className="text-sm font-bold uppercase tracking-widest text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
+            <Trophy className="h-5 w-5 text-[var(--color-accent-400)]" />
             Recent Milestones
           </p>
           <div className="flex flex-col mt-1 gap-2">

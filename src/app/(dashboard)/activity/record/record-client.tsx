@@ -227,13 +227,13 @@ export default function RecordClient({ today, simulate }: { today: string; simul
               Keep going
             </button>
             {confirmDiscard ? (
-              <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 p-3">
+              <div className="flex items-center gap-2 rounded-2xl border border-[var(--color-error-500)]/30 bg-[var(--color-error-500)]/10 p-3">
                 <p className="flex-1 text-sm">Delete this recording? This can&apos;t be undone.</p>
-                <button onClick={() => { r.discard(); setConfirmDiscard(false); setStage("live"); }} className="h-10 rounded-xl bg-red-500 px-4 text-sm font-bold text-white">Delete</button>
+                <button onClick={() => { r.discard(); setConfirmDiscard(false); setStage("live"); }} className="h-10 rounded-xl bg-[var(--color-error-500)] px-4 text-sm font-bold text-white">Delete</button>
                 <button onClick={() => setConfirmDiscard(false)} className="h-10 rounded-xl px-3 text-sm font-semibold">Cancel</button>
               </div>
             ) : (
-              <button onClick={() => setConfirmDiscard(true)} className="h-12 text-sm font-semibold text-red-400">Discard</button>
+              <button onClick={() => setConfirmDiscard(true)} className="h-12 text-sm font-semibold text-[var(--color-error-400)]">Discard</button>
             )}
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function RecordClient({ today, simulate }: { today: string; simul
           <span
             className={cn(
               "pointer-events-auto flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold backdrop-blur",
-              r.gps === "good" ? "bg-[#C8F560]/90 text-black" : r.gps === "denied" || r.gps === "unsupported" ? "bg-red-500/90 text-white" : "bg-black/70 text-white",
+              r.gps === "good" ? "bg-[#C8F560]/90 text-black" : r.gps === "denied" || r.gps === "unsupported" ? "bg-[var(--color-error-500)]/90 text-white" : "bg-black/70 text-white",
             )}
           >
             <MapPin className="h-3.5 w-3.5" />

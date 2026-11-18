@@ -281,7 +281,7 @@ export function SessionClient({ initial, isPro }: { initial: SessionData; isPro:
                   </p>
                 </div>
                 {!done && (
-                  <button onClick={() => removeExercise(ex)} aria-label="Remove exercise" className="p-1 text-[var(--color-text-muted)] hover:text-red-400">
+                  <button onClick={() => removeExercise(ex)} aria-label="Remove exercise" className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-error-400)]">
                     <X className="h-4 w-4" />
                   </button>
                 )}
@@ -300,7 +300,7 @@ export function SessionClient({ initial, isPro }: { initial: SessionData; isPro:
                   return (
                     <div key={set.id} className={cn("grid grid-cols-[2.5rem_1fr_1fr_2.75rem_2rem] items-center gap-2", completed && "opacity-70")}>
                       <span className="flex items-center justify-center gap-1 text-sm font-semibold text-[var(--color-text-muted)]">
-                        {set.isPersonalRecord ? <Trophy className="h-4 w-4 text-yellow-500" /> : set.setNumber}
+                        {set.isPersonalRecord ? <Trophy className="fs-pop h-4 w-4 text-[var(--color-accent-400)]" /> : set.setNumber}
                       </span>
                       <input
                         type="number"
@@ -341,7 +341,7 @@ export function SessionClient({ initial, isPro }: { initial: SessionData; isPro:
                         {busy === set.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-5 w-5" />}
                       </button>
                       {!done && !completed ? (
-                        <button onClick={() => deleteSet(set)} aria-label="Delete set" className="text-[var(--color-text-muted)] hover:text-red-400">
+                        <button onClick={() => deleteSet(set)} aria-label="Delete set" className="text-[var(--color-text-muted)] hover:text-[var(--color-error-400)]">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       ) : (
@@ -397,7 +397,7 @@ export function SessionClient({ initial, isPro }: { initial: SessionData; isPro:
                       type="button"
                       onClick={() => (speech.listening ? speech.stop() : speech.start(magicText, (m) => toast.error(m)))}
                       aria-label={speech.listening ? "Stop listening" : "Speak"}
-                      className={cn("absolute right-3 top-3 rounded-md p-1.5", speech.listening ? "animate-pulse bg-red-500/10 text-red-500" : "text-[var(--color-text-muted)]")}
+                      className={cn("absolute right-3 top-3 rounded-md p-1.5", speech.listening ? "animate-pulse bg-[var(--color-error-500)]/10 text-[var(--color-error-500)]" : "text-[var(--color-text-muted)]")}
                     >
                       <Mic className="h-5 w-5" />
                     </button>

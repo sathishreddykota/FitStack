@@ -124,7 +124,7 @@ export function SubscriptionClient({ plan, price, payments, prefill }: Props) {
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-red-500">
+        <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-error-500)]/20 bg-[var(--color-error-500)]/10 p-4 text-[var(--color-error-500)]">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
           <p className="text-sm font-medium">{error}</p>
         </div>
@@ -142,7 +142,7 @@ export function SubscriptionClient({ plan, price, payments, prefill }: Props) {
           <ul className="space-y-3">
             {FREE_FEATURES.map((f) => (
               <li key={f} className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-                <Check className="h-5 w-5 shrink-0 text-green-500" />
+                <Check className="h-5 w-5 shrink-0 text-[var(--color-brand-400)]" />
                 {f}
               </li>
             ))}

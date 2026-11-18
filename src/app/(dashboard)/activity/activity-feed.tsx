@@ -137,7 +137,7 @@ export function ActivityFeed({ initial, initialCursor }: { initial: FeedItem[]; 
       </ul>
 
       {error && (
-        <p role="alert" className="rounded-2xl bg-red-500/10 p-3 text-center text-sm text-red-300">
+        <p role="alert" className="rounded-2xl bg-[var(--color-error-500)]/10 p-3 text-center text-sm text-[var(--color-error-400)]">
           {error}{" "}
           <button className="font-bold underline" onClick={() => load(filter, items.length ? cursor : null)}>Try again</button>
         </p>

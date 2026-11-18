@@ -78,15 +78,15 @@ export function ActivityActions(p: { id: string; title: string; notes: string | 
         <Pencil className="h-4 w-4" /> Edit title, notes or privacy
       </button>
       {confirmDelete ? (
-        <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 p-3">
+        <div className="flex items-center gap-2 rounded-2xl border border-[var(--color-error-500)]/30 bg-[var(--color-error-500)]/10 p-3">
           <p className="flex-1 text-sm">Delete this activity? This can&apos;t be undone.</p>
-          <button onClick={remove} disabled={busy !== null} className="flex h-10 items-center gap-1 rounded-xl bg-red-500 px-4 text-sm font-bold text-white disabled:opacity-60">
+          <button onClick={remove} disabled={busy !== null} className="flex h-10 items-center gap-1 rounded-xl bg-[var(--color-error-500)] px-4 text-sm font-bold text-white disabled:opacity-60">
             {busy === "delete" && <Loader2 className="h-4 w-4 animate-spin" />} Delete
           </button>
           <button onClick={() => setConfirmDelete(false)} className="h-10 rounded-xl px-3 text-sm font-semibold">Cancel</button>
         </div>
       ) : (
-        <button onClick={() => setConfirmDelete(true)} className="flex h-12 items-center justify-center gap-2 text-sm font-semibold text-red-400">
+        <button onClick={() => setConfirmDelete(true)} className="flex h-12 items-center justify-center gap-2 text-sm font-semibold text-[var(--color-error-400)]">
           <Trash2 className="h-4 w-4" /> Delete activity
         </button>
       )}

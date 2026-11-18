@@ -162,7 +162,7 @@ function ChatPane({ id, initialMessages, onActivity }: { id: string; initialMess
             aria-label={speech.listening ? "Stop listening" : "Speak"}
             className={cn(
               "shrink-0 rounded-full border p-4",
-              speech.listening ? "animate-pulse border-red-500/30 bg-red-500/10 text-red-500" : "border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)]",
+              speech.listening ? "animate-pulse border-[var(--color-error-500)]/30 bg-[var(--color-error-500)]/10 text-[var(--color-error-500)]" : "border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)]",
             )}
           >
             <Mic className="h-5 w-5" />
@@ -288,7 +288,7 @@ export function CoachClient() {
                       {new Date(c.updatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · {c.messageCount} messages
                     </p>
                   </button>
-                  <button onClick={() => remove(c.id)} aria-label="Delete chat" className="p-1 text-[var(--color-text-muted)] hover:text-red-400">
+                  <button onClick={() => remove(c.id)} aria-label="Delete chat" className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-error-400)]">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>

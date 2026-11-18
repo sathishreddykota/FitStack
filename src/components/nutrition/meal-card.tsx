@@ -269,7 +269,7 @@ export function MealCard({
                         onClick={() => setIsSaving(true)}
                         className={cn(
                           "flex-none px-4 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold shadow-sm",
-                          "bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-primary)] hover:text-red-500",
+                          "bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-primary)] hover:text-[var(--color-error-500)]",
                           "hover:bg-[var(--color-surface-2)] transition-all hover:-translate-y-0.5"
                         )}
                         title="Save as Meal"

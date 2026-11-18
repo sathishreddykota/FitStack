@@ -19,7 +19,7 @@ const STATUS_CLS: Record<CalendarSession["status"], string> = {
   COMPLETED: "bg-[var(--color-success-500)]/10 border-[var(--color-success-500)]/20 text-[var(--color-success-400)]",
   IN_PROGRESS: "bg-[var(--color-brand-500)]/10 border-[var(--color-brand-500)]/30 text-[var(--color-brand-400)]",
   SKIPPED: "bg-[var(--color-warning-500)]/10 border-[var(--color-warning-500)]/20 text-[var(--color-warning-400)] line-through",
-  MISSED: "bg-red-500/5 border-red-500/20 text-red-400 line-through",
+  MISSED: "bg-[var(--color-error-500)]/5 border-[var(--color-error-500)]/20 text-[var(--color-error-400)] line-through",
   PLANNED: "bg-[var(--color-highlight-500)]/10 border-[var(--color-highlight-500)]/20 text-[var(--color-highlight-400)]",
 };
 

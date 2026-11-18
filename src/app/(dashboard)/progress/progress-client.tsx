@@ -148,7 +148,7 @@ export function ProgressClient({
 
         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-text-muted)] mb-1">
-            <Trophy className="h-4 w-4 text-yellow-500" />
+            <Trophy className="h-4 w-4 text-[var(--color-accent-400)]" />
             Volume
           </div>
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
@@ -364,7 +364,7 @@ export function ProgressClient({
 
           <div className="lg:col-span-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm flex flex-col h-full max-h-[500px]">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-6 flex items-center gap-2">
-               <Trophy className="h-4 w-4 text-yellow-500" /> Recent Personal Records
+               <Trophy className="h-4 w-4 text-[var(--color-accent-400)]" /> Recent Personal Records
             </h3>
             <div className="overflow-y-auto pr-2 space-y-3 flex-1">
                {recentPRs.length > 0 ? (

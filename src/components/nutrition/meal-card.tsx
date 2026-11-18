@@ -208,7 +208,7 @@ export function MealCard({
           )}
 
           {!hasItems && (
-            <span className="text-xs text-[var(--color-text-disabled)]">Empty</span>
+            <span className="text-xs text-[var(--color-text-muted)]">Empty</span>
           )}
 
           <ChevronDown

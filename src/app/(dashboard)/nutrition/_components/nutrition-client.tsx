@@ -211,7 +211,7 @@ export function NutritionClient({
       </div>
 
       {/* Disclaimer */}
-      <p className="text-xs text-[var(--color-text-disabled)] text-center pb-4">
+      <p className="text-xs text-[var(--color-text-muted)] text-center pb-4">
         Nutrition data is based on verified food database values. Actual values may vary depending on preparation method.
       </p>
     </div>

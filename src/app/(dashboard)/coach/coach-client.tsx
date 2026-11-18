@@ -169,7 +169,7 @@ function ChatPane({ id, initialMessages, onActivity }: { id: string; initialMess
           </button>
         )}
       </form>
-      <p className="mt-2 text-center text-[11px] text-[var(--color-text-disabled)]">
+      <p className="mt-2 text-center text-[11px] text-[var(--color-text-muted)]">
         FitStack Coach can make mistakes and isn&apos;t a doctor.
       </p>
     </>

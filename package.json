@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "dev:lan": "next dev -H 0.0.0.0 --port 3000",
     "android:sync": "cap sync android",
-    "android:open": "cap open android"
+    "android:open": "cap open android",
+    "notify:tick": "node scripts/notify-tick.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.70",

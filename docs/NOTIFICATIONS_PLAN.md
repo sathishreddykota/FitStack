@@ -98,3 +98,11 @@ First launch → ask permission ──►  POST /api/push/devices (save token)
 - Notifications for people using FitStack in a desktop browser (web push). Possible later with the
   same rules engine.
 - Workout, water and sleep reminders. Easy to add once the engine exists.
+
+## Running the scheduler
+
+- **On the PC (testing):** `npm run notify:tick` runs it once; `npm run notify:tick -- --every 15`
+  keeps it going. It reads `CRON_SECRET` from `.env.local`.
+- **Production:** after deploying, run [`supabase-notifications-cron.sql`](supabase-notifications-cron.sql)
+  once in Supabase → SQL Editor (fill in the domain and a fresh secret first).
+- **Phone test:** [`PHONE_TEST.md`](PHONE_TEST.md).

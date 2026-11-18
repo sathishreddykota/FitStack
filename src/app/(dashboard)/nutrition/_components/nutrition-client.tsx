@@ -127,21 +127,20 @@ export function NutritionClient({
   return (
     <div className="theme-nutrition min-h-screen bg-[var(--color-surface-0)] text-[var(--color-text-primary)] -mx-4 -mt-4 px-4 pt-4 pb-20 sm:-m-8 sm:p-8 space-y-8 animate-slide-up">
       {/* Page Hero/Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--color-brand-600)] to-[var(--color-brand-400)] p-8 text-white shadow-elevated">
-        {/* Soft background shape */}
-        <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white opacity-10 blur-3xl"></div>
-        <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-white opacity-10 blur-3xl"></div>
+      <div className="relative overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-8 text-[var(--color-text-primary)]">
+        {/* Ember glow (Ember Night: colour only where it means something) */}
+        <div aria-hidden="true" className="fs-glow-orb pointer-events-none absolute -right-28 -top-28 h-72 w-72 rounded-full" />
         
         <div className="relative z-10 flex flex-col gap-2">
           <div className="flex items-center gap-3">
             <Link
               href={`/nutrition?date=${addDays(dateStr, -1)}`}
               aria-label="Previous day"
-              className="rounded-full bg-white/15 p-1.5 hover:bg-white/25"
+              className="rounded-full bg-[var(--color-surface-3)] p-1.5 hover:bg-[var(--color-surface-4)]"
             >
               <ChevronLeft className="h-4 w-4" />
             </Link>
-            <p className="text-sm font-medium tracking-wide text-white/80 uppercase">
+            <p className="text-sm font-semibold tracking-[.16em] text-[var(--color-brand-400)] uppercase">
               {dateStr === today
                 ? "Today"
                 : new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(date)}
@@ -150,15 +149,15 @@ export function NutritionClient({
               <Link
                 href={dateStr === addDays(today, -1) ? "/nutrition" : `/nutrition?date=${addDays(dateStr, 1)}`}
                 aria-label="Next day"
-                className="rounded-full bg-white/15 p-1.5 hover:bg-white/25"
+                className="rounded-full bg-[var(--color-surface-3)] p-1.5 hover:bg-[var(--color-surface-4)]"
               >
                 <ChevronRight className="h-4 w-4" />
               </Link>
             )}
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-bold leading-[1.05] text-[var(--color-text-primary)]">
             Food that<br/>
-            <span className="font-serif italic font-medium opacity-90">nourishes life.</span>
+            <span className="text-[var(--color-brand-400)]">nourishes life.</span>
           </h1>
         </div>
       </div>

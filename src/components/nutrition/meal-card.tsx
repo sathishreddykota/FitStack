@@ -89,6 +89,8 @@ export function MealCard({
   onRefresh,
 }: MealCardProps) {
   const [expanded, setExpanded] = useState(defaultOpen || items.length > 0);
+  // Foods on screen when the card first appeared; anything logged after that pops in.
+  const [initialIds] = useState(() => new Set(items.map((i) => i.id)));
   const [modalOpen, setModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [mealName, setMealName] = useState("");
@@ -223,7 +225,9 @@ export function MealCard({
             {hasItems ? (
               <div className="divide-y divide-[var(--color-border-subtle)]">
                 {items.map((item) => (
-                  <MealItemRow key={item.id} item={item} onRefresh={onRefresh} />
+                  <div key={item.id} className={initialIds.has(item.id) ? undefined : "fs-pop"}>
+                    <MealItemRow item={item} onRefresh={onRefresh} />
+                  </div>
                 ))}
               </div>
             ) : (

@@ -4,6 +4,7 @@
 import { Flame } from "lucide-react";
 import { MacroBar } from "./macro-bar";
 import { cn, calcPercent } from "@/lib/utils";
+import { CountUp } from "@/components/motion/count-up";
 
 interface DailySummaryProps {
   calories: number;
@@ -48,8 +49,8 @@ export function DailySummary({
             Daily Wellness
           </h2>
           <div className="flex items-baseline gap-3">
-            <span className="text-5xl font-serif font-bold text-[var(--color-text-primary)]">
-              {Math.round(calories)}
+            <span className="num text-5xl font-bold text-[var(--color-text-primary)]">
+              <CountUp value={Math.round(calories)} />
             </span>
             <span className="text-lg text-[var(--color-text-muted)] font-medium">
               / {calorieTarget} kcal
@@ -64,14 +65,20 @@ export function DailySummary({
 
         {/* Circular calorie ring */}
         <div className="relative flex-shrink-0 h-24 w-24">
-          <svg className="h-24 w-24 -rotate-90" viewBox="0 0 80 80">
+          <svg className="h-24 w-24 -rotate-90" viewBox="0 0 80 80" aria-hidden="true">
+            <defs>
+              <linearGradient id="fs-cal-ring" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#FFB547" />
+                <stop offset="1" stopColor="#FF4F2B" />
+              </linearGradient>
+            </defs>
             {/* Track */}
             <circle
               cx="40"
               cy="40"
               r="36"
               fill="none"
-              stroke="var(--color-surface-2)"
+              stroke="var(--color-surface-3)"
               strokeWidth="6"
             />
             {/* Progress */}
@@ -80,12 +87,13 @@ export function DailySummary({
               cy="40"
               r="36"
               fill="none"
-              stroke={over ? "var(--color-warning-500)" : "var(--color-brand-500)"}
+              stroke={over ? "var(--color-warning-500)" : "url(#fs-cal-ring)"}
               strokeWidth="6"
               strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 36}`}
-              strokeDashoffset={`${2 * Math.PI * 36 * (1 - Math.min(caloriePct, 100) / 100)}`}
-              className="transition-all duration-1000 ease-spring"
+              pathLength={100}
+              className="fs-ring"
+              strokeOpacity={caloriePct > 0 ? 1 : 0}
+              style={{ ["--pct" as string]: Math.min(caloriePct, 100) }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -93,8 +101,8 @@ export function DailySummary({
               className="h-6 w-6 mb-0.5"
               style={{ color: over ? "var(--color-warning-500)" : "var(--color-brand-500)" }}
             />
-            <span className="text-xs font-bold text-[var(--color-text-primary)]">
-              {Math.round(caloriePct)}%
+            <span className="num text-xs font-bold text-[var(--color-text-primary)]">
+              <CountUp value={Math.round(caloriePct)} />%
             </span>
           </div>
         </div>
@@ -107,29 +115,36 @@ export function DailySummary({
           { label: "Carbs", current: carbsG, target: carbsTarget, color: "var(--color-carbs)" },
           { label: "Fat", current: fatG, target: fatTarget, color: "var(--color-fat)" },
           ...(fiberG > 0 ? [{ label: "Fiber", current: fiberG, target: resolvedFiberTarget, color: "var(--color-fiber)" }] : []),
-        ].map(({ label, current, target, color }, idx) => (
+        ].map(({ label, current, target, color }, idx) => {
+          // Protein and fiber: more is fine, so reaching the target is a win (lime).
+          const hit = (label === "Protein" || label === "Fiber") && target > 0 && current >= target;
+          return (
           <div key={label} className={cn("flex flex-col", idx === 3 ? "hidden sm:flex" : "")}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}></div>
               <span className="text-xs font-bold text-[var(--color-text-primary)] tracking-wide">{label}</span>
             </div>
             <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-lg font-semibold text-[var(--color-text-primary)]">{Math.round(current)}</span>
+              <span className="num text-lg font-bold text-[var(--color-text-primary)]">
+                <CountUp value={Math.round(current)} />
+              </span>
               <span className="text-xs text-[var(--color-text-muted)]">/ {target}g</span>
             </div>
             
             {/* Minimal Progress Bar */}
-            <div className="h-1.5 w-full bg-[var(--color-surface-2)] rounded-full overflow-hidden">
-              <div 
-                className="h-full rounded-full transition-all duration-1000"
-                style={{ 
+            <div className={cn("h-1.5 w-full bg-[var(--color-surface-3)] rounded-full overflow-hidden", hit && "fs-win")}>
+              <div
+                className="fs-grow-x h-full rounded-full transition-[width] duration-500"
+                style={{
                   width: `${Math.min((current / target) * 100, 100)}%`,
-                  backgroundColor: color
+                  backgroundColor: hit ? "var(--color-accent-400)" : color,
+                  ["--i" as string]: idx,
                 }}
               ></div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

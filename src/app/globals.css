@@ -336,13 +336,17 @@ h1, h2, h3, h4, h5, h6 {
 .fs-win::after { content: ""; position: absolute; inset: -6px; border-radius: inherit; box-shadow: 0 0 0 0 rgb(200 245 96 / .55); animation: fsWin .6s var(--ease-out-expo) 2; pointer-events: none; }
 @keyframes fsWin { to { box-shadow: 0 0 0 14px rgb(200 245 96 / 0); } }
 
+/* Ember light behind a hero card (decor). */
+.fs-glow-orb { background: radial-gradient(circle, rgb(255 107 44 / .32), rgb(255 107 44 / 0) 65%); animation: fsOrb 3.5s ease-in-out infinite; }
+@keyframes fsOrb { 50% { opacity: .55; } }
+
 /* Soft ember glow for the one big call to action on a screen. */
 .fs-ember-glow { box-shadow: 0 0 0 0 rgb(255 107 44 / .45), var(--shadow-glow-brand); animation: fsEmber 2.4s ease-in-out infinite; }
 @keyframes fsEmber { 50% { box-shadow: 0 0 0 6px rgb(255 107 44 / 0), var(--shadow-glow-brand); } }
 
 @media (prefers-reduced-motion: reduce) {
   .fs-ring { animation: none; transition: none; }
-  .fs-cascade > *, .fs-pop, .fs-ember-glow { animation: none; }
+  .fs-cascade > *, .fs-pop, .fs-ember-glow, .fs-glow-orb { animation: none; }
   .fs-win::after { animation: none; }
   .animate-fade-in, .animate-slide-up, .animate-scale-in { animation: none; }
 }

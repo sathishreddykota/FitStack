@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
   
   turbopack: {},
 
+  // Dev only: let a phone on the home Wi-Fi (the Android app via `npm run dev:lan`)
+  // load the dev server's scripts and hot reload. Private network ranges only.
+  allowedDevOrigins: ["192.168.*.*", "10.*.*.*"],
+
   // Enable experimental features useful for SaaS
   experimental: {
     // Server Actions are stable in Next.js 14+, just enabled by default

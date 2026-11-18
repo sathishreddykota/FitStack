@@ -49,9 +49,14 @@ describe("dates", () => {
 });
 
 describe("zoned times", async () => {
-  const { zonedToUtc, localHour } = await import("./dates");
+  const { zonedToUtc, localHour, localMinutes } = await import("./dates");
   it("converts Indian wall-clock time to UTC", () => {
     expect(zonedToUtc("2026-11-17", "06:30", "Asia/Kolkata").toISOString()).toBe("2026-11-17T01:00:00.000Z");
     expect(localHour("Asia/Kolkata", new Date("2026-11-17T01:00:00Z"))).toBe(6);
+  });
+  it("minutes since local midnight", () => {
+    expect(localMinutes("Asia/Kolkata", new Date("2026-11-17T05:00:00Z"))).toBe(10 * 60 + 30);
+    expect(localMinutes("Asia/Dubai", new Date("2026-11-17T06:30:00Z"))).toBe(10 * 60 + 30);
+    expect(localMinutes("Asia/Kolkata", new Date("2026-11-17T18:30:00Z"))).toBe(0);
   });
 });

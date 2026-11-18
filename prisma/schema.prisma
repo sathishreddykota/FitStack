@@ -232,25 +232,28 @@ model User {
   updatedAt          DateTime         @updatedAt
 
   // Relations
-  profile          FitnessProfile?
-  meals            Meal[]
-  workoutSessions  WorkoutSession[]
-  trainingPlans    TrainingPlan[]
-  weightLogs       WeightLog[]
-  bodyMeasurements BodyMeasurement[]
-  waterLogs        WaterLog[]
-  sleepLogs        SleepLog[]
-  habitLogs        HabitLog[]
-  progressPhotos   ProgressPhoto[]
-  aiConversations  AIConversation[]
-  customFoods      Food[]            @relation("UserCreatedFoods")
-  savedMeals       SavedMeal[]
-  subscription     Subscription?
-  paymentOrders    PaymentOrder[]
-  aiUsage          AIUsage[]
-  aiInsights       AIInsight[]
-  activities       Activity[]
-  bestEfforts      BestEffort[]
+  profile           FitnessProfile?
+  meals             Meal[]
+  workoutSessions   WorkoutSession[]
+  trainingPlans     TrainingPlan[]
+  weightLogs        WeightLog[]
+  bodyMeasurements  BodyMeasurement[]
+  waterLogs         WaterLog[]
+  sleepLogs         SleepLog[]
+  habitLogs         HabitLog[]
+  progressPhotos    ProgressPhoto[]
+  aiConversations   AIConversation[]
+  customFoods       Food[]             @relation("UserCreatedFoods")
+  savedMeals        SavedMeal[]
+  subscription      Subscription?
+  paymentOrders     PaymentOrder[]
+  aiUsage           AIUsage[]
+  aiInsights        AIInsight[]
+  activities        Activity[]
+  bestEfforts       BestEffort[]
+  pushDevices       PushDevice[]
+  notificationPrefs NotificationPrefs?
+  notificationLogs  NotificationLog[]
 
   @@index([clerkId])
   @@index([email])
@@ -877,4 +880,55 @@ model BestEffort {
 
   @@unique([activityId, distanceM])
   @@index([userId, type, distanceM, timeSec])
+}
+
+// ───────────────────────────────────────────────────────────────
+// PHONE NOTIFICATIONS (meal / goal reminders and achievements)
+// ───────────────────────────────────────────────────────────────
+
+// One row per installed app (Firebase Cloud Messaging token).
+model PushDevice {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  platform   String   @default("android")
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Per-user switches and reminder times ("HH:MM", user's local time).
+// No row = all defaults.
+model NotificationPrefs {
+  userId        String   @id
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled       Boolean  @default(true)
+  mealReminders Boolean  @default(true)
+  goalReminders Boolean  @default(true)
+  achievements  Boolean  @default(true)
+  morningRecap  Boolean  @default(true)
+  breakfastAt   String   @default("10:30")
+  lunchAt       String   @default("14:30")
+  dinnerAt      String   @default("21:00")
+  summaryAt     String   @default("21:30")
+  recapAt       String   @default("08:00")
+  quietStart    String   @default("22:00")
+  quietEnd      String   @default("07:30")
+  updatedAt     DateTime @updatedAt
+}
+
+// Every notification sent. The unique key makes each kind at most once per local day,
+// even when two scheduler runs overlap.
+model NotificationLog {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day    DateTime @db.Date
+  kind   String
+  sentAt DateTime @default(now())
+
+  @@unique([userId, day, kind])
+  @@index([userId, kind, day])
 }

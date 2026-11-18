@@ -136,3 +136,10 @@ export function zonedToUtc(dateStr: string, time: string, tz: string): Date {
   const shown = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"));
   return new Date(guess - (shown - guess));
 }
+
+/** Minutes since local midnight (0–1439) for an instant in `tz`. */
+export function localMinutes(tz: string, at: Date): number {
+  const parts = new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "numeric", hourCycle: "h23", timeZone: safeTimezone(tz) }).formatToParts(at);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  return get("hour") * 60 + get("minute");
+}

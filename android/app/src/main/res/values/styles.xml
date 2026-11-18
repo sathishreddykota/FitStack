@@ -16,6 +16,9 @@
         <item name="android:windowBackground">@color/fitstack_night</item>
         <item name="android:statusBarColor">@color/fitstack_night</item>
         <item name="android:navigationBarColor">@color/fitstack_night</item>
+        <!-- Dark app: white status-bar and navigation-bar icons. -->
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 
 

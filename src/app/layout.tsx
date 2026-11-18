@@ -72,7 +72,8 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover", // lets content use the full screen on notched phones (safe-area insets)
+  // No viewportFit "cover": the page stays inside the status/navigation bars. With "cover"
+  // the Android app (edge-to-edge on Android 15+) drew the header under the status bar.
 };
 
 // ─────────────────────────────────────────────

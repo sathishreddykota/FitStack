@@ -24,6 +24,10 @@ const config: CapacitorConfig = {
         // Plain http is only for testing against a dev server on your Wi-Fi.
         cleartext: serverUrl.startsWith("http://"),
         errorPath: "index.html",
+        // Sign-in (Clerk) briefly redirects through its own domain; keep that inside the app
+        // instead of opening Chrome. Dev instances use *.clerk.accounts.dev; production uses
+        // clerk.<your-domain> — add it via CAP_ALLOW_NAV (comma-separated) for release builds.
+        allowNavigation: ["*.clerk.accounts.dev", ...(process.env.CAP_ALLOW_NAV?.split(",").map((h) => h.trim()).filter(Boolean) ?? [])],
       }
     : undefined,
   android: {
@@ -32,6 +36,8 @@ const config: CapacitorConfig = {
   plugins: {
     // Show reminders/achievements as normal notifications even while the app is open.
     PushNotifications: { presentationOptions: ["sound", "alert"] },
+    // Dark app: light status-bar/navigation-bar icons ("DARK" = for dark backgrounds).
+    SystemBars: { style: "DARK" },
   },
 };
 

@@ -42,6 +42,7 @@ describe.skipIf(!url)("push notifications API", async () => {
   const { runScheduler } = await import("@/server/notifications/notify");
   const devices = await import("./push/devices/route");
   const unregister = await import("./push/unregister/route");
+  const prefsRoute = await import("./notifications/prefs/route");
   const testSend = await import("./push/test/route");
   const cron = await import("./cron/notifications/route");
   const quickAdd = await import("./nutrition/meals/quick-add/route");
@@ -140,6 +141,33 @@ describe.skipIf(!url)("push notifications API", async () => {
     await call(quickAdd.POST, "POST", "/api/nutrition/meals/quick-add", { mealType: "SNACK", date, calories: 100, proteinG: 5 });
     await settle();
     expect(sent.slice(before).map((s) => s.kind)).toEqual(["protein_hit"]);
+  });
+
+  it("settings: read, change, and refuse reminders that could never arrive", async () => {
+    session.clerkId = null;
+    expect((await call(prefsRoute.GET, "GET", "/api/notifications/prefs")).status).toBe(401);
+    session.clerkId = `${tag}-other`;
+    const got = await call(prefsRoute.GET, "GET", "/api/notifications/prefs");
+    expect(got.status).toBe(200);
+    expect(got.data.prefs).toMatchObject({ enabled: true, breakfastAt: "10:30" });
+
+    const quiet = await call(prefsRoute.PATCH, "PATCH", "/api/notifications/prefs", { quietStart: "22:00", quietEnd: "07:30", breakfastAt: "08:15" });
+    expect(quiet.status).toBe(200);
+    expect(quiet.data.prefs).toMatchObject({ quietStart: "22:00", quietEnd: "07:30", breakfastAt: "08:15", lunchAt: "14:30" });
+
+    const early = await call(prefsRoute.PATCH, "PATCH", "/api/notifications/prefs", { breakfastAt: "06:00" });
+    expect(early.status).toBe(400);
+    expect(early.json.error).toBe("Breakfast reminder (06:00) is inside quiet hours (22:00–07:30).");
+    expect((await call(prefsRoute.PATCH, "PATCH", "/api/notifications/prefs", { lunchAt: "07:59", breakfastAt: "08:00" })).status).toBe(400); // lunch before breakfast
+    expect((await call(prefsRoute.PATCH, "PATCH", "/api/notifications/prefs", { summaryAt: "20:00" })).status).toBe(400); // before dinner
+    expect((await call(prefsRoute.PATCH, "PATCH", "/api/notifications/prefs", { lunchAt: "25:00" })).status).toBe(400);
+    expect((await call(prefsRoute.PATCH, "PATCH", "/api/notifications/prefs", { userId: "someone-else" })).status).toBe(400);
+    // Nothing invalid was stored.
+    expect((await call(prefsRoute.GET, "GET", "/api/notifications/prefs")).data.prefs.breakfastAt).toBe("08:15");
+
+    expect((await call(prefsRoute.PATCH, "PATCH", "/api/notifications/prefs", { enabled: false })).data.prefs.enabled).toBe(false);
+    // Put things back for the scheduler tests below.
+    await call(prefsRoute.PATCH, "PATCH", "/api/notifications/prefs", { enabled: true, quietStart: "00:00", quietEnd: "00:00", breakfastAt: "10:30" });
   });
 
   it("scheduler route is locked behind CRON_SECRET", async () => {

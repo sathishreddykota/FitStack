@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { UserProfile } from "@clerk/nextjs";
-import { Settings as SettingsIcon, Sparkles } from "lucide-react";
+import { Bell, Settings as SettingsIcon, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -31,6 +31,20 @@ export default function SettingsPage() {
         >
           <Sparkles className="h-4 w-4" />
           Manage Subscription
+        </Link>
+      </div>
+
+      <div className="bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+        <div>
+          <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Notifications</h2>
+          <p className="text-sm text-[var(--color-text-muted)]">Meal reminders, goal progress and achievements on your phone.</p>
+        </div>
+        <Link
+          href="/settings/notifications"
+          className="flex items-center gap-2 bg-[var(--color-surface-2)] text-[var(--color-text-primary)] font-bold px-6 py-2.5 rounded-xl hover:bg-[var(--color-brand-500)] hover:text-black transition-colors shrink-0"
+        >
+          <Bell className="h-4 w-4" />
+          Notification settings
         </Link>
       </div>
       

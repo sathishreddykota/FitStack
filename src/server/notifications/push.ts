@@ -22,7 +22,17 @@ export interface PushMessage {
 export type Sender = (m: PushMessage) => Promise<"ok" | "dead" | "error">;
 
 /** FCM error codes that mean the app was uninstalled or the token is garbage. */
-const DEAD_TOKEN = new Set(["messaging/registration-token-not-registered", "messaging/invalid-registration-token", "messaging/invalid-argument"]);
+const DEAD_TOKEN = new Set(["messaging/registration-token-not-registered", "messaging/invalid-registration-token"]);
+
+/**
+ * Is this send error about the device token (→ delete it)? "invalid-argument" is
+ * only a dead token when the message says so; otherwise it's a bug in our payload,
+ * and deleting the user's phone would silently stop all their notifications.
+ */
+export function isDeadTokenError(code: string, message = ""): boolean {
+  if (DEAD_TOKEN.has(code)) return true;
+  return code === "messaging/invalid-argument" && /registration token/i.test(message);
+}
 
 let sender: Sender | null = null;
 
@@ -57,8 +67,8 @@ async function firebaseSender(): Promise<Sender | null> {
       });
       return "ok";
     } catch (e) {
-      const code = (e as { code?: string }).code ?? "";
-      if (DEAD_TOKEN.has(code)) return "dead";
+      const { code = "", message = "" } = e as { code?: string; message?: string };
+      if (isDeadTokenError(code, message)) return "dead";
       console.error("[push] send failed:", code || e);
       return "error";
     }

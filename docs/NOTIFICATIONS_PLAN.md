@@ -81,12 +81,17 @@ First launch → ask permission ──►  POST /api/push/devices (save token)
 5. **Phone test** on your real phone (combined with the run-tracking phone test), using a
    "send me a test notification" button and a fast-forward clock in development.
 
-## What you need to do
+## Firebase setup (done 2026-11-18)
 
-- **Create a free Firebase project** (console.firebase.google.com) with an Android app named
-  `com.fitstack.app`, then download two files: `google-services.json` (goes into the app) and a
-  service-account key (goes into `.env.local` as a secret, never into git). I'll walk you through it
-  when we reach step 2. Steps 1 and 4 don't need it.
+- Project **FitStack**, id `fitstack-82148` (free Spark plan; Analytics and Gemini off), with the
+  Android app `com.fitstack.app`.
+- `android/app/google-services.json`: the app's Firebase config (not secret, committed).
+- `FIREBASE_SERVICE_ACCOUNT` in `.env.local`: the service-account key, base64 on one line. Secret,
+  never committed. On the host (Vercel) add the same value as an environment variable.
+- `CRON_SECRET` in `.env.local`: generate a fresh one for production.
+- If the key ever leaks: Google Cloud console → IAM → Service accounts →
+  `firebase-adminsdk-…@fitstack-82148.iam.gserviceaccount.com` → Keys → delete it, then generate a
+  new one.
 
 ## Not in this round
 

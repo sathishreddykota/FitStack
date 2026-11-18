@@ -120,5 +120,5 @@ First launch → ask permission ──►  POST /api/push/devices (save token)
 | Sign-out removes the phone; scheduler finds 0 phones | ✅ |
 
 Found and fixed on the phone: sign-in redirect opened Chrome, header under the status bar,
-dark status-bar icons. Still open: **"Continue with Google" opens Chrome** (Google blocks its
-sign-in inside app web views) — needs an in-app browser-tab flow before the Play Store.
+dark status-bar icons. "Continue with Google" opened Chrome — fixed the same day with a
+browser-tab sign-in flow (see ANDROID.md → Signing in inside the app), tested on the phone.

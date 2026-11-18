@@ -66,10 +66,25 @@ In PowerShell use `$env:CAP_SERVER_URL="http://192.168.1.23:3000"; npm run andro
 Then in the app: **Run → pick Run → Start**. Android asks for location ("While using the app") and
 notifications — allow both. Lock the phone and walk around; the notification stays while recording.
 
+## Signing in inside the app
+
+- **Email / phone code:** work directly in the app.
+- **Continue with Google:** Google refuses sign-in inside an app's web view, so in the app the
+  button opens Google in a secure browser tab (Chrome Custom Tab) and hands the session back:
+  1. app → `POST /api/native-auth/begin` → `{ id, verifier }` (the verifier never leaves the app)
+  2. tab → `/native-auth/start?id=…` → Google → `/native-auth/callback` → `/native-auth/done`
+  3. done page (signed in) → `POST /api/native-auth/complete` → back to the app with
+     `intent://auth?id=…;package=com.fitstack.app` (Chrome gives it only to FitStack)
+  4. app → `POST /api/native-auth/claim { id, verifier }` → one-time Clerk ticket → signed in
+  Code: `src/server/native-auth.ts`, `src/lib/native-auth.ts`, `src/components/auth/`,
+  `src/app/native-auth/`. Each attempt works once and expires after 10 minutes.
+- **Production:** Clerk's sign-in redirects must stay inside the app: build with
+  `CAP_ALLOW_NAV=clerk.<your-domain>` (dev uses `*.clerk.accounts.dev` automatically).
+
 ## Release build (after the site is deployed)
 
 ```bash
-CAP_SERVER_URL=https://<your-domain> npm run android:sync
+CAP_SERVER_URL=https://<your-domain> CAP_ALLOW_NAV=clerk.<your-domain> npm run android:sync
 npm run android:open   # Build → Generate Signed App Bundle → .aab for the Play Console
 ```
 

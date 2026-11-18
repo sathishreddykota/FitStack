@@ -932,3 +932,21 @@ model NotificationLog {
   @@unique([userId, day, kind])
   @@index([userId, kind, day])
 }
+
+// ───────────────────────────────────────────────────────────────
+// APP SIGN-IN HAND-OFF (Google sign-in in a browser tab → back into the Android app)
+// ───────────────────────────────────────────────────────────────
+
+// One sign-in attempt. The app keeps `verifier` private; only its hash is stored.
+// The browser tab learns `id`, Google signs the user in, `clerkUserId` is filled,
+// and the app claims it once with id + verifier. Rows live for a few minutes.
+model NativeAuthRequest {
+  id           String    @id @default(cuid())
+  verifierHash String
+  clerkUserId  String?
+  completedAt  DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+
+  @@index([expiresAt])
+}

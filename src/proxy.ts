@@ -24,6 +24,10 @@ const isPublicRoute = createRouteMatcher([
   "/api/cron(.*)",
   // Sign-out on a phone: no session left; the device token is the proof
   "/api/push/unregister",
+  // Google sign-in for the Android app: runs before there's a session
+  "/native-auth(.*)",
+  "/api/native-auth/begin",
+  "/api/native-auth/claim",
 ]);
 
 const isApiRoute = createRouteMatcher(["/api(.*)"]);

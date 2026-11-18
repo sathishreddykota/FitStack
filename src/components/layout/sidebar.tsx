@@ -120,7 +120,7 @@ export function Sidebar({ subInfo }: { subInfo?: { isTrial: boolean; daysLeft: n
           <svg
             viewBox="0 0 24 24"
             fill="none"
-            className="w-5 h-5 text-white"
+            className="w-5 h-5 text-[var(--color-on-brand)]"
             aria-hidden="true"
           >
             <path
@@ -238,7 +238,7 @@ export function MobileSidebar({
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
-                className="w-4 h-4 text-white"
+                className="w-4 h-4 text-[var(--color-on-brand)]"
                 aria-hidden="true"
               >
                 <path

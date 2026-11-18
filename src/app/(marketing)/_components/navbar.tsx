@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 export function Navbar() {
   return (
@@ -7,7 +8,7 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="text-2xl">🏋️</div>
+          <LogoMark size={30} />
           <span className="text-xl font-extrabold tracking-tight">
             FitStack
           </span>

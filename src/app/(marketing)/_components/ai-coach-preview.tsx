@@ -1,4 +1,5 @@
 import { BrainCircuit, Sparkles, User } from "lucide-react";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 export function AiCoachPreview() {
   return (
@@ -40,9 +41,7 @@ export function AiCoachPreview() {
           <div className="order-1 lg:order-2">
             <div className="bg-surface-1 border border-white/10 rounded-2xl overflow-hidden shadow-elevated">
               <div className="bg-surface-2 border-b border-white/5 px-4 py-3 flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-brand-500 flex items-center justify-center">
-                  <span className="text-xl">🏋️</span>
-                </div>
+                <LogoMark size={32} className="rounded-full" />
                 <div>
                   <div className="text-sm font-semibold">FitStack AI</div>
                   <div className="text-xs text-text-muted">Always analyzing...</div>

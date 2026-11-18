@@ -30,6 +30,8 @@ const config: CapacitorConfig = {
         allowNavigation: ["*.clerk.accounts.dev", ...(process.env.CAP_ALLOW_NAV?.split(",").map((h) => h.trim()).filter(Boolean) ?? [])],
       }
     : undefined,
+  // Night behind the web view while the first page loads (default is white → a flash).
+  backgroundColor: "#0A0A0F",
   android: {
     allowMixedContent: false,
   },

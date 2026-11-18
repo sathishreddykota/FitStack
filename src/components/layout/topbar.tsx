@@ -33,7 +33,7 @@ export function Topbar({ subInfo }: { subInfo?: { isTrial: boolean; daysLeft: nu
             <svg
               viewBox="0 0 24 24"
               fill="none"
-              className="w-3.5 h-3.5 text-white"
+              className="w-3.5 h-3.5 text-[var(--color-on-brand)]"
               aria-hidden="true"
             >
               <path

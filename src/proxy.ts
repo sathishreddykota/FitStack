@@ -22,6 +22,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks(.*)",
   // The notification scheduler authenticates with CRON_SECRET
   "/api/cron(.*)",
+  // Sign-out on a phone: no session left; the device token is the proof
+  "/api/push/unregister",
 ]);
 
 const isApiRoute = createRouteMatcher(["/api(.*)"]);

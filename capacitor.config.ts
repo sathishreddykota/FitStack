@@ -29,6 +29,10 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
   },
+  plugins: {
+    // Show reminders/achievements as normal notifications even while the app is open.
+    PushNotifications: { presentationOptions: ["sound", "alert"] },
+  },
 };
 
 export default config;

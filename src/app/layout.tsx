@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import { APP_NAME, APP_TAGLINE, APP_DESCRIPTION } from "@/lib/constants";
 import { PwaSupport } from "@/components/layout/pwa";
+import { PushSupport } from "@/components/layout/push-support";
 
 // ─────────────────────────────────────────────
 // Fonts
@@ -116,6 +117,7 @@ export default function RootLayout({
             }}
           />
           <PwaSupport />
+          <PushSupport />
         </body>
       </html>
     </ClerkProvider>

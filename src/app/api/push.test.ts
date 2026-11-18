@@ -41,6 +41,7 @@ describe.skipIf(!url)("push notifications API", async () => {
   const push = await import("@/server/notifications/push");
   const { runScheduler } = await import("@/server/notifications/notify");
   const devices = await import("./push/devices/route");
+  const unregister = await import("./push/unregister/route");
   const testSend = await import("./push/test/route");
   const cron = await import("./cron/notifications/route");
   const quickAdd = await import("./nutrition/meals/quick-add/route");
@@ -98,6 +99,16 @@ describe.skipIf(!url)("push notifications API", async () => {
     session.clerkId = `${tag}-me`;
     expect((await call(devices.DELETE, "DELETE", "/api/push/devices", { token: TOKEN })).data).toEqual({ removed: 1 });
     expect((await call(devices.POST, "POST", "/api/push/devices", { token: TOKEN })).status).toBe(200);
+  });
+
+  it("sign-out on a phone: the token alone removes that phone, nothing else", async () => {
+    session.clerkId = null;
+    const t = `${tag}-signout-cccccccccccccccccccc`;
+    await prisma.pushDevice.create({ data: { userId: me, token: t } });
+    expect((await call(unregister.POST, "POST", "/api/push/unregister", { token: t })).data).toEqual({ removed: 1 });
+    expect((await call(unregister.POST, "POST", "/api/push/unregister", { token: "x" })).status).toBe(400);
+    // The main phone is untouched.
+    expect(await prisma.pushDevice.count({ where: { token: TOKEN } })).toBe(1);
   });
 
   it("test notification: needs the server set up, then reaches the phone", async () => {

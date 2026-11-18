@@ -69,7 +69,7 @@ export function AIInsightCard() {
               {insight.isUpgradePrompt ? (
                 <Link 
                   href="/settings/subscription"
-                  className="inline-flex items-center gap-2 bg-[var(--color-brand-500)] text-black font-black uppercase tracking-widest py-3 px-6 rounded-full shadow-[0_0_15px_rgba(255,87,34,0.3)] hover:bg-white transition-all"
+                  className="inline-flex items-center gap-2 bg-[var(--color-brand-500)] text-black font-black uppercase tracking-widest py-3 px-6 rounded-full shadow-[0_0_15px_rgba(255,107,44,0.3)] hover:bg-white transition-all"
                 >
                   <Sparkles className="h-4 w-4" />
                   Upgrade to Pro

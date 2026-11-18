@@ -84,7 +84,7 @@ export function WeightTrendChart({ data, targetWeight, startingWeight }: WeightT
           {targetWeight && (
             <ReferenceLine 
               y={targetWeight} 
-              stroke="var(--color-accent-500)" 
+              stroke="var(--color-brand-400)" 
               strokeDasharray="3 3" 
               label={{ position: "insideTopLeft", value: "Target", fill: "var(--color-text-muted)", fontSize: 11 }} 
             />

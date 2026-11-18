@@ -35,7 +35,7 @@ const MEAL_TYPE_CONFIG: Record<
   SNACK: {
     label: "Snack",
     emoji: "🍎",
-    gradient: "from-[var(--color-accent-400)]/20 to-transparent",
+    gradient: "from-[var(--color-fiber)]/20 to-transparent",
   },
   PRE_WORKOUT: {
     label: "Pre-Workout",

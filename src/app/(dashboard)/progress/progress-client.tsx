@@ -161,7 +161,7 @@ export function ProgressClient({
       {/* ── Bodyweight & Goals ──────────────────────── */}
       <section className="space-y-4">
         <h2 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-          <Target className="h-5 w-5 text-[var(--color-accent-400)]" /> Bodyweight & Goals
+          <Target className="h-5 w-5 text-[var(--color-brand-400)]" /> Bodyweight & Goals
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-4">

@@ -164,7 +164,7 @@ export function ProfileClient({ user, profile, targets }: Props) {
           </Field>
         </Section>
 
-        <Section icon={<Target className="h-5 w-5 text-[var(--color-accent-400)]" />} title="Goals & nutrition">
+        <Section icon={<Target className="h-5 w-5 text-[var(--color-brand-400)]" />} title="Goals & nutrition">
           <Field label="Goal">
             <select className={inputCls} value={form.fitnessGoal} onChange={sel("fitnessGoal")}>
               {opts(GOAL_LABELS).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}

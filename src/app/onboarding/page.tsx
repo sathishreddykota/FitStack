@@ -870,7 +870,7 @@ export default function OnboardingPage() {
       <div className="hidden lg:flex flex-1 relative bg-[var(--color-surface-1)] border-l border-[var(--color-border-subtle)] flex-col items-center justify-center p-12 overflow-hidden">
         {/* Abstract Background Effects */}
         <div className="absolute inset-0 hero-gradient opacity-30" />
-        <div className="absolute top-1/4 -right-20 w-96 h-96 bg-[var(--color-accent-500)]/10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/4 -right-20 w-96 h-96 bg-[var(--color-brand-500)]/10 blur-[100px] rounded-full pointer-events-none" />
         <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-[var(--color-brand-500)]/10 blur-[100px] rounded-full pointer-events-none" />
         
         {/* Dynamic Content */}
@@ -889,7 +889,7 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div className="flex flex-col items-center text-center gap-6">
               <div className="h-24 w-24 rounded-2xl bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center shadow-elevated">
-                <Target className="h-10 w-10 text-[var(--color-accent-400)]" />
+                <Target className="h-10 w-10 text-[var(--color-brand-400)]" />
               </div>
               <h2 className="text-3xl font-bold text-[var(--color-text-primary)]">What&apos;s the mission?</h2>
               <p className="text-[var(--color-text-secondary)] text-lg">

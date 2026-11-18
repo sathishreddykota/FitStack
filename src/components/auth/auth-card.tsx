@@ -25,7 +25,7 @@ const elements = {
   formFieldInput:
     "bg-[var(--color-surface-1)] border-[var(--color-border)] text-white rounded-lg focus:ring-2 focus:ring-[var(--color-brand-500)] h-11",
   formButtonPrimary:
-    "bg-[var(--color-brand-500)] hover:bg-white text-black font-black uppercase tracking-widest rounded-full shadow-[0_0_15px_rgba(255,87,34,0.4)] transition-all h-12",
+    "bg-[var(--color-brand-500)] hover:bg-white text-black font-black uppercase tracking-widest rounded-full shadow-[0_0_15px_rgba(255,107,44,0.4)] transition-all h-12",
   otpCodeFieldInput:
     "bg-[var(--color-surface-1)] border-[var(--color-border)] text-white !text-xl font-bold rounded-lg focus:ring-2 focus:ring-[var(--color-brand-500)]",
   footerActionLink: "text-[var(--color-brand-400)] hover:text-white transition-colors font-bold",

@@ -106,7 +106,7 @@ export function RecoveryClient({ todayStr, initialData, trendsData }: RecoveryCl
             label="Avg Energy"
             value={`${trendsData.insights.avgEnergy.toFixed(1)} / 5`}
             icon={HeartPulse}
-            iconColor="var(--color-accent-400)"
+            iconColor="var(--color-fiber)"
             subtext="Over last 30 days"
           />
           <StatCard 

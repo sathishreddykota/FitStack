@@ -28,8 +28,8 @@ export function RecoveryTrendsChart({ data }: RecoveryTrendsChartProps) {
               <stop offset="95%" stopColor="var(--color-brand-400)" stopOpacity={0}/>
             </linearGradient>
             <linearGradient id="colorEnergy" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--color-accent-400)" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="var(--color-accent-400)" stopOpacity={0}/>
+              <stop offset="5%" stopColor="var(--color-fiber)" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="var(--color-fiber)" stopOpacity={0}/>
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
@@ -84,11 +84,11 @@ export function RecoveryTrendsChart({ data }: RecoveryTrendsChartProps) {
             type="monotone" 
             dataKey="energy" 
             name="Energy (1-5)"
-            stroke="var(--color-accent-400)" 
+            stroke="var(--color-fiber)" 
             strokeWidth={3}
             fillOpacity={1} 
             fill="url(#colorEnergy)" 
-            activeDot={{ r: 6, fill: "var(--color-accent-400)", strokeWidth: 0 }}
+            activeDot={{ r: 6, fill: "var(--color-fiber)", strokeWidth: 0 }}
           />
         </AreaChart>
       </ResponsiveContainer>

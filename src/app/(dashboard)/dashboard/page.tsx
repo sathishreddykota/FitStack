@@ -133,7 +133,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="fs-cascade grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <StatCard
             label="Calories"
             value={hasAnyMealData ? Math.round(todayCalories) : "—"}
@@ -151,6 +151,7 @@ export default async function DashboardPage() {
                 : undefined
             }
             progressColor="var(--color-calories)"
+            goalHit={hasAnyMealData && !!calorieTarget && todayCalories >= calorieTarget * 0.9 && todayCalories <= calorieTarget * 1.1}
             empty={!hasAnyMealData}
             emptyMessage="Start logging meals to see today's calories"
           />
@@ -167,6 +168,7 @@ export default async function DashboardPage() {
                 : undefined
             }
             progressColor="var(--color-protein)"
+            goalHit={hasAnyMealData && !!proteinTarget && todayProtein >= proteinTarget}
             empty={!hasAnyMealData}
             emptyMessage="No protein logged yet"
           />
@@ -195,6 +197,7 @@ export default async function DashboardPage() {
               hasAnyMealData && fiberTarget ? (todayFiber / fiberTarget) * 100 : undefined
             }
             progressColor="var(--color-fiber)"
+            goalHit={hasAnyMealData && !!fiberTarget && todayFiber >= fiberTarget}
             empty={!hasAnyMealData}
             emptyMessage="No fiber logged yet"
           />
@@ -211,6 +214,7 @@ export default async function DashboardPage() {
                 : undefined
             }
             progressColor="var(--color-info-400)"
+            goalHit={hasWaterData && !!waterTargetL && todayWaterMl / 1000 >= waterTargetL}
             empty={!hasWaterData}
             emptyMessage="No water logged yet"
           />
@@ -235,7 +239,7 @@ export default async function DashboardPage() {
               Log Weight <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="fs-cascade grid grid-cols-2 gap-3">
             <StatCard
               label="Current Weight"
               value={currentWeight ? currentWeight.toFixed(1) : "—"}
@@ -262,7 +266,7 @@ export default async function DashboardPage() {
                   : undefined
               }
               icon={Target}
-              iconColor="var(--color-accent-500)"
+              iconColor="var(--color-brand-400)"
               empty={!targetWeight}
               emptyMessage="Set a target in your profile"
             />
@@ -285,7 +289,7 @@ export default async function DashboardPage() {
               Log Session <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="fs-cascade grid grid-cols-2 gap-3">
             <StatCard
               label="Last Workout"
               value={
@@ -360,7 +364,7 @@ export default async function DashboardPage() {
             Log Metrics <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="fs-cascade grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard
             label="Sleep"
             value={sleepMin != null ? `${Math.floor(sleepMin / 60)}h ${sleepMin % 60}m` : "—"}

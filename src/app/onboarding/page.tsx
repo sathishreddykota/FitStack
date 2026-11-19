@@ -29,6 +29,7 @@ import {
   APP_NAME,
 } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 // ─────────────────────────────────────────────
 // Step Definitions
@@ -257,11 +258,7 @@ export default function OnboardingPage() {
         {/* Header */}
         <header className="flex-none flex items-center justify-between px-6 py-5 sticky top-0 bg-[var(--color-surface-0)]/80 backdrop-blur-md z-20 border-b border-[var(--color-border-subtle)] lg:border-none">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg brand-gradient flex items-center justify-center shadow-[var(--shadow-glow-brand)]">
-              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-white" aria-hidden="true">
-                <path d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4M6 8h12M6 16h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
+            <LogoMark size={28} className="shadow-[var(--shadow-glow-brand)]" />
             <span className="font-bold text-[var(--color-text-primary)] tracking-tight">{APP_NAME}</span>
           </div>
           <div className="flex items-center gap-3">

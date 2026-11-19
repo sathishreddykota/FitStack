@@ -57,3 +57,13 @@ Still to look at with your own eyes:
 - Motion feel: numbers counting up, rings drawing in, food popping in after logging, the lime
   pulse when a goal is hit (needs a day with logged food to see).
 - A workout session with a personal record (the lime trophy).
+
+## Logo: the Ring (chosen 19 Nov 2026)
+
+A goal ring almost closed (76%, from 12 o'clock clockwise) with a lime dot about to land: the
+rings that fill up across the app, as a mark. Night ring on an Ember tile.
+
+- In the app and website: `src/components/brand/logo-mark.tsx` (`LogoMark`, `RingMark`).
+- Icons (web, favicon, Android launcher, adaptive, round): `python scripts/make-icons.py .`
+- Android notification icon: `android/app/src/main/res/drawable/ic_stat_fitstack.xml`.
+- The options it was picked from are on the "FitStack Motion Concept" canvas.

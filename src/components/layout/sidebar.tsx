@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/constants";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 // ─────────────────────────────────────────────
 // Icon map (matches icon names in NAV_ITEMS)
@@ -116,21 +117,7 @@ export function Sidebar({ subInfo }: { subInfo?: { isTrial: boolean; daysLeft: n
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] h-screen sticky top-0">
       {/* Logo */}
       <Link href="/dashboard" className="flex items-center gap-2.5 px-4 py-5 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-1)] transition-colors">
-        <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center shadow-[var(--shadow-glow-brand)]">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-5 h-5 text-[var(--color-on-brand)]"
-            aria-hidden="true"
-          >
-            <path
-              d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4M6 8h12M6 16h12"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
+        <LogoMark size={32} className="shadow-[var(--shadow-glow-brand)]" />
         <span className="text-base font-bold tracking-tight text-[var(--color-text-primary)]">
           {APP_NAME}
         </span>
@@ -234,21 +221,7 @@ export function MobileSidebar({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--color-border-subtle)]">
           <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-7 h-7 rounded-lg brand-gradient flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="w-4 h-4 text-[var(--color-on-brand)]"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4M6 8h12M6 16h12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
+            <LogoMark size={28} />
             <span className="font-bold text-[var(--color-text-primary)]">{APP_NAME}</span>
             {subInfo?.hasPaid && (
                <span className="bg-[var(--color-brand-500)]/20 text-[var(--color-brand-500)] text-[10px] font-black uppercase tracking-widest py-0.5 px-2 rounded-full border border-[var(--color-brand-500)]/30">

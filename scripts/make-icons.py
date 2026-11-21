@@ -1,6 +1,6 @@
 """Usage: python scripts/make-icons.py <path to fitstack folder>  (needs Pillow)
 
-Draw the FitStack mark (the Ring: Night ring + lime dot on Ember) and write every app/web icon size."""
+Draw the Daystrong mark (the Ring: Night ring + lime dot on Ember) and write every app/web icon size."""
 import sys, os
 from PIL import Image, ImageDraw
 root = sys.argv[1]

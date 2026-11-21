@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-// Typed client for FitStack API routes (web now, reusable by a native shell).
+// Typed client for Daystrong API routes (web now, reusable by a native shell).
 // Every route answers { success: true, data } or { success: false, error, code }.
 // ─────────────────────────────────────────────
 

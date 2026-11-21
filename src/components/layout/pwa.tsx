@@ -49,7 +49,7 @@ export function PwaSupport() {
   return (
     <div className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 shadow-xl">
       <Download className="h-5 w-5 shrink-0 text-[var(--color-brand-400)]" />
-      <p className="flex-1 text-sm text-[var(--color-text-primary)]">Install FitStack for one-tap logging.</p>
+      <p className="flex-1 text-sm text-[var(--color-text-primary)]">Install Daystrong for one-tap logging.</p>
       <button
         onClick={async () => {
           await promptEvent.prompt();

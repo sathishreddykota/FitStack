@@ -298,7 +298,7 @@ export default function RecordClient({ today, simulate }: { today: string; simul
                   ? GPS_TEXT[r.gps].replace("browser settings", "app settings")
                   : GPS_TEXT[r.gps]
                 : r.native
-                  ? "You can lock your phone — FitStack keeps tracking and shows a notification."
+                  ? "You can lock your phone — Daystrong keeps tracking and shows a notification."
                   : "Keep this screen open while you move — your phone's screen stays on."}
             </p>
             {r.native && r.gps === "denied" && (

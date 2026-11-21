@@ -1,19 +1,19 @@
-# FitStack Android app
+# Daystrong Android app
 
-The Android app is a thin [Capacitor](https://capacitorjs.com) shell around the FitStack website.
+The Android app is a thin [Capacitor](https://capacitorjs.com) shell around the Daystrong website.
 Everything you see is the same Next.js app; the only native part is **GPS recording**, which runs in
-an Android *foreground service* (with a "FitStack is recording" notification) so runs keep tracking
+an Android *foreground service* (with a "Daystrong is recording" notification) so runs keep tracking
 with the screen off or another app open.
 
 | Piece | Where |
 |---|---|
 | App config (app id, which URL to load) | `capacitor.config.ts` |
 | Android project | `android/` (open it in Android Studio) |
-| Offline / "can't reach FitStack" page | `mobile/www/index.html` |
+| Offline / "can't reach Daystrong" page | `mobile/www/index.html` |
 | Native GPS bridge | `src/lib/native-gps.ts` (used by `src/hooks/use-run-recorder.ts`) |
 | Permissions | `android/app/src/main/AndroidManifest.xml` |
 
-App id: **`com.fitstack.app`** — permanent once the app is on the Play Store. Change it in
+App id: **`com.daystrong.app`** — permanent once the app is on the Play Store. Change it in
 `capacitor.config.ts` *and* `android/app/build.gradle` (`namespace` + `applicationId`) before the
 first upload if you want a different one.
 
@@ -74,7 +74,7 @@ notifications — allow both. Lock the phone and walk around; the notification s
   1. app → `POST /api/native-auth/begin` → `{ id, verifier }` (the verifier never leaves the app)
   2. tab → `/native-auth/start?id=…` → Google → `/native-auth/callback` → `/native-auth/done`
   3. done page (signed in) → `POST /api/native-auth/complete` → back to the app with
-     `intent://auth?id=…;package=com.fitstack.app` (Chrome gives it only to FitStack)
+     `intent://auth?id=…;package=com.daystrong.app` (Chrome gives it only to Daystrong)
   4. app → `POST /api/native-auth/claim { id, verifier }` → one-time Clerk ticket → signed in
   Code: `src/server/native-auth.ts`, `src/lib/native-auth.ts`, `src/components/auth/`,
   `src/app/native-auth/`. Each attempt works once and expires after 10 minutes.

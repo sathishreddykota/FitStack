@@ -12,7 +12,7 @@ export default function OfflinePage() {
       </p>
       <h1 className="text-2xl font-black text-[var(--color-text-primary)]">You&apos;re offline</h1>
       <p className="max-w-sm text-[var(--color-text-secondary)]">
-        FitStack needs a connection to load your data. Your logs are safe — reconnect and try again.
+        Daystrong needs a connection to load your data. Your logs are safe — reconnect and try again.
       </p>
       <a href="/dashboard" className="rounded-full bg-[var(--color-brand-500)] px-6 py-3 font-bold text-[var(--color-on-brand)]">
         Try again

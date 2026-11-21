@@ -1,6 +1,6 @@
 # Redesign: Ember Night
 
-Concept canvas: "FitStack Motion Concept" (direction board + Today, Food, Train, Coach screens).
+Concept canvas: "Daystrong Motion Concept" (direction board + Today, Food, Train, Coach screens).
 
 ## The look
 
@@ -66,4 +66,4 @@ rings that fill up across the app, as a mark. Night ring on an Ember tile.
 - In the app and website: `src/components/brand/logo-mark.tsx` (`LogoMark`, `RingMark`).
 - Icons (web, favicon, Android launcher, adaptive, round): `python scripts/make-icons.py .`
 - Android notification icon: `android/app/src/main/res/drawable/ic_stat_fitstack.xml`.
-- The options it was picked from are on the "FitStack Motion Concept" canvas.
+- The options it was picked from are on the "Daystrong Motion Concept" canvas.

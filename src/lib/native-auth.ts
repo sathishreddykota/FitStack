@@ -7,7 +7,7 @@ import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor
 // server half). Google blocks sign-in inside an app's web view, so:
 //   1. ask the server for a hand-off { id, verifier }; keep the verifier here
 //   2. open Google sign-in in a browser tab (Custom Tab) with only the id
-//   3. the tab returns to the app via com.fitstack.app://auth?id=…
+//   3. the tab returns to the app via com.daystrong.app://auth?id=…
 //   4. claim with id + verifier → one-time Clerk ticket → sign in here
 // Plugins are reached by name (registerPlugin) so the web bundle stays light.
 // ─────────────────────────────────────────────
@@ -71,9 +71,9 @@ export async function startGoogleSignIn() {
   await Browser.open({ url: `${window.location.origin}/native-auth/start?id=${id}`, toolbarColor: "#0A0A0F" });
 }
 
-/** The id from a com.fitstack.app://auth?id=… link, or null if it isn't one. */
+/** The id from a com.daystrong.app://auth?id=… link, or null if it isn't one. */
 export function handoffIdFromUrl(url: string): string | null {
-  const m = /^com\.fitstack\.app:\/\/auth\/?\?(?:.*&)?id=([a-z0-9]{10,64})(?:&|$)/.exec(url);
+  const m = /^com\.daystrong\.app:\/\/auth\/?\?(?:.*&)?id=([a-z0-9]{10,64})(?:&|$)/.exec(url);
   return m ? m[1] : null;
 }
 

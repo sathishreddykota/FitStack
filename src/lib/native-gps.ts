@@ -80,7 +80,7 @@ export function watchNativePosition(
     if (!active) return;
     await BackgroundGeolocation.start(
       {
-        backgroundTitle: "FitStack is recording",
+        backgroundTitle: "Daystrong is recording",
         // Setting a message is what keeps updates coming in the background.
         backgroundMessage: background ? "Tracking your route — tap to open" : undefined,
         requestPermissions: true,

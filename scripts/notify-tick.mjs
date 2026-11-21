@@ -1,4 +1,4 @@
-// Run the notification scheduler once against a running FitStack (dev testing).
+// Run the notification scheduler once against a running Daystrong (dev testing).
 // In production the database calls /api/cron/notifications every 15 minutes instead.
 //
 //   node scripts/notify-tick.mjs                 → http://localhost:3000, once

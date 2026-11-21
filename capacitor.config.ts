@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 // ─────────────────────────────────────────────
-// Android app shell. The app loads the deployed FitStack site (one codebase);
+// Android app shell. The app loads the deployed Daystrong site (one codebase);
 // native code is only used for GPS recording with a foreground service.
 //
 //   CAP_SERVER_URL=https://<your-domain> npx cap sync android     ← release build
@@ -14,8 +14,8 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const serverUrl = process.env.CAP_SERVER_URL?.replace(/\/$/, "");
 
 const config: CapacitorConfig = {
-  appId: "com.fitstack.app",
-  appName: "FitStack",
+  appId: "com.daystrong.app",
+  appName: "Daystrong",
   // Offline / error page bundled in the app.
   webDir: "mobile/www",
   server: serverUrl

@@ -1,4 +1,4 @@
-# FitStack v2 — Rebuild Plan
+# Daystrong v2 — Rebuild Plan
 
 **Positioning:** everything MyFitnessPal-class apps charge ₹400–900/month for, at **₹199/month**, built for Indian food and
 hybrid training, mobile-first.

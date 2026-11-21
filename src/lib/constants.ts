@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-// FitStack Constants
+// Daystrong Constants
 // ─────────────────────────────────────────────
 
 // Activity level multipliers (Mifflin-St Jeor TDEE)
@@ -173,7 +173,7 @@ export const SUBSCRIPTION_FEATURES = {
   ],
 } as const;
 
-export const APP_NAME = "FitStack" as const;
+export const APP_NAME = "Daystrong" as const;
 export const APP_TAGLINE = "Build the body. Build the strength. Build the athlete." as const;
 export const APP_DESCRIPTION =
   "Track nutrition, strength training, conditioning, recovery and progress in one place." as const;

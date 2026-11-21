@@ -10,7 +10,7 @@ export function Navbar() {
         <Link href="/" className="flex items-center gap-2">
           <LogoMark size={30} />
           <span className="text-xl font-extrabold tracking-tight">
-            FitStack
+            Daystrong
           </span>
         </Link>
 

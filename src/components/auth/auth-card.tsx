@@ -6,7 +6,7 @@ import { SignIn, SignUp } from "@clerk/nextjs";
 import { nativeAuthAvailable, startGoogleSignIn } from "@/lib/native-auth";
 
 // ─────────────────────────────────────────────
-// Clerk's sign-in / sign-up card, styled for FitStack.
+// Clerk's sign-in / sign-up card, styled for Daystrong.
 // In the Android app, Clerk's Google button is redirected through a browser tab
 // (Google blocks its sign-in inside app web views).
 // ─────────────────────────────────────────────

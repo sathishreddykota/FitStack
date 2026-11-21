@@ -1,4 +1,4 @@
-package com.fitstack.app;
+package com.daystrong.app;
 
 import com.getcapacitor.BridgeActivity;
 

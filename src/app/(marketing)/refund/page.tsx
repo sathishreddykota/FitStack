@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Refund & Cancellation Policy",
-  description: "Refund & Cancellation Policy for FitStack",
+  description: "Refund & Cancellation Policy for Daystrong",
 };
 
 export default function RefundPage() {
@@ -13,7 +13,7 @@ export default function RefundPage() {
         <p><strong>Last updated: 16 November 2026</strong></p>
 
         <h2 className="text-2xl font-semibold text-text-primary mt-8">1. How PRO is billed</h2>
-        <p>FitStack PRO is a one-time payment that gives you 30 days of PRO access. It does not renew automatically and we never charge you again unless you choose to buy more time. If you buy again while PRO is still active, the new days are added to the end of your current period.</p>
+        <p>Daystrong PRO is a one-time payment that gives you 30 days of PRO access. It does not renew automatically and we never charge you again unless you choose to buy more time. If you buy again while PRO is still active, the new days are added to the end of your current period.</p>
         <p>When your PRO period ends, your account moves to the Free plan. Your data is kept and free features keep working. There is nothing to cancel.</p>
 
         <h2 className="text-2xl font-semibold text-text-primary mt-8">2. Refunds</h2>

@@ -22,7 +22,7 @@ export default function SettingsPage() {
 
       <div className="bg-[var(--color-surface-1)] border border-[var(--color-border)] rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div>
-          <h2 className="text-lg font-bold text-[var(--color-text-primary)]">FitStack Subscription</h2>
+          <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Daystrong Subscription</h2>
           <p className="text-sm text-[var(--color-text-muted)]">Manage your plan, billing cycle, and premium features.</p>
         </div>
         <Link 

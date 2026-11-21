@@ -49,8 +49,8 @@ export const metadata: Metadata = {
     "body composition",
     "fitness SaaS",
   ],
-  authors: [{ name: "FitStack" }],
-  creator: "FitStack",
+  authors: [{ name: "Daystrong" }],
+  creator: "Daystrong",
   openGraph: {
     type: "website",
     locale: "en_IN",
@@ -96,6 +96,12 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider
+      // Titles use the app name from Clerk's dashboard by default; set them here so the
+      // brand lives in the code (Daystrong) whatever the dashboard says.
+      localization={{
+        signIn: { start: { title: "Sign in to Daystrong", subtitle: "Welcome back! Please sign in to continue" } },
+        signUp: { start: { title: "Create your Daystrong account", subtitle: "Welcome! Please fill in the details to get started." } },
+      }}
       appearance={{
         baseTheme: dark,
         variables: {

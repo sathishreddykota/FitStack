@@ -30,7 +30,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Dashboard",
-  description: "Your FitStack daily overview",
+  description: "Your Daystrong daily overview",
 };
 
 /** Adequate fibre intake (ICMR-NIN guidance ≈ 30 g/day for adults). */

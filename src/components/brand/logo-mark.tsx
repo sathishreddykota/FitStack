@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 
 /**
- * FitStack's mark — the Ring: a goal ring almost closed, with a lime dot about
+ * Daystrong's mark — the Ring: a goal ring almost closed, with a lime dot about
  * to land (the same rings that fill up across the app). Drawn in Night on an
- * Ember tile. Decorative next to the word "FitStack", so hidden from screen readers.
+ * Ember tile. Decorative next to the word "Daystrong", so hidden from screen readers.
  *
  * Geometry (100-unit box), shared with the app icons (scripts/make-icons.py):
  * ring r=29, stroke 12, 76% of the circle from 12 o'clock clockwise; dot r=7 at (35.5, 24.9).

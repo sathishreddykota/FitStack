@@ -1,4 +1,4 @@
-# FitStack
+# Daystrong
 
 Nutrition, training, water and recovery tracking with an AI coach — built for India, mobile first.
 **Free** for logging; **PRO ₹199 / 30 days** for the AI coach, AI logging, training plans and analytics.

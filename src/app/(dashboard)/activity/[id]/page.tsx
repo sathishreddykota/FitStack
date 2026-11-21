@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Activity" };
 export default async function ActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   return (
-    <PremiumGate title="Track runs, walks and rides" description="Route maps, km splits and personal bests are part of FitStack PRO.">
+    <PremiumGate title="Track runs, walks and rides" description="Route maps, km splits and personal bests are part of Daystrong PRO.">
       <Detail id={id} />
     </PremiumGate>
   );

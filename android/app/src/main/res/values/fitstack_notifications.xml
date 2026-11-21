@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Accent for notification icons (FitStack orange). -->
+    <!-- Accent for notification icons (Daystrong orange). -->
     <color name="fitstack_accent">#F97316</color>
     <string name="notification_channel_reminders">reminders</string>
 </resources>

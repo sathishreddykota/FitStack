@@ -240,7 +240,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      toast.success("Welcome to FitStack! 🎉");
+      toast.success("Welcome to Daystrong! 🎉");
       router.push("/dashboard");
     } catch {
       toast.error("Network error. Please check your connection and try again.");
@@ -851,7 +851,7 @@ export default function OnboardingPage() {
                     ) : (
                       <>
                         <CheckCircle2 className="h-4 w-4" />
-                        Start FitStack
+                        Start Daystrong
                       </>
                     )}
                   </Button>
@@ -912,7 +912,7 @@ export default function OnboardingPage() {
               </div>
               <h2 className="text-3xl font-bold text-[var(--color-text-primary)]">How do you eat?</h2>
               <p className="text-[var(--color-text-secondary)] text-lg">
-                FitStack adapts to any dietary lifestyle. Your macros will perfectly reflect what you actually want to eat.
+                Daystrong adapts to any dietary lifestyle. Your macros will perfectly reflect what you actually want to eat.
               </p>
             </div>
           )}
@@ -923,7 +923,7 @@ export default function OnboardingPage() {
               </div>
               <h2 className="text-3xl font-bold text-[var(--color-text-primary)]">You&apos;re ready.</h2>
               <p className="text-[var(--color-text-secondary)] text-lg">
-                We&apos;ve crunched the numbers. Your personalized FitStack dashboard is ready to go. Let&apos;s get to work.
+                We&apos;ve crunched the numbers. Your personalized Daystrong dashboard is ready to go. Let&apos;s get to work.
               </p>
             </div>
           )}

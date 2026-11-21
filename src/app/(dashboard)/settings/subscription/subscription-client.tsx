@@ -74,7 +74,7 @@ export function SubscriptionClient({ plan, price, payments, prefill }: Props) {
         order_id: order.orderId,
         amount: order.amount,
         currency: order.currency,
-        name: "FitStack PRO",
+        name: "Daystrong PRO",
         description: `${price.days} days of PRO`,
         prefill,
         theme: { color: "#FF6B2C" },
@@ -110,7 +110,7 @@ export function SubscriptionClient({ plan, price, payments, prefill }: Props) {
   return (
     <div className="mx-auto max-w-4xl animate-fade-in space-y-10 pb-12">
       <div className="space-y-3 text-center">
-        <h1 className="text-4xl font-black tracking-tight text-[var(--color-text-primary)] lg:text-5xl">FitStack PRO</h1>
+        <h1 className="text-4xl font-black tracking-tight text-[var(--color-text-primary)] lg:text-5xl">Daystrong PRO</h1>
         <p className="text-lg text-[var(--color-text-secondary)]">
           Everything premium fitness apps charge ₹500+ for, at {rupees(price.amountPaise)} a month.
         </p>

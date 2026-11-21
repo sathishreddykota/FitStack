@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- FitStack "night" background: avoids a white flash while the app loads. -->
+    <!-- Daystrong "night" background: avoids a white flash while the app loads. -->
     <color name="fitstack_night">#0A0A0F</color>
 </resources>

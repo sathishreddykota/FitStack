@@ -13,7 +13,7 @@ export function AiCoachPreview() {
               Your data becomes your coach.
             </h2>
             <p className="text-lg text-text-secondary mb-8">
-              Logging data is useless if you don&apos;t know what to do with it. FitStack&apos;s AI analyzes your food intake, weight trends, and workout performance to give you actionable advice.
+              Logging data is useless if you don&apos;t know what to do with it. Daystrong&apos;s AI analyzes your food intake, weight trends, and workout performance to give you actionable advice.
             </p>
             
             <div className="space-y-4">
@@ -43,7 +43,7 @@ export function AiCoachPreview() {
               <div className="bg-surface-2 border-b border-white/5 px-4 py-3 flex items-center gap-3">
                 <LogoMark size={32} className="rounded-full" />
                 <div>
-                  <div className="text-sm font-semibold">FitStack AI</div>
+                  <div className="text-sm font-semibold">Daystrong AI</div>
                   <div className="text-xs text-text-muted">Always analyzing...</div>
                 </div>
               </div>

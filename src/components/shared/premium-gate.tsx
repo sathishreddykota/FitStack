@@ -20,7 +20,7 @@ interface PremiumGateProps {
  */
 export async function PremiumGate({
   children,
-  title = "Unlock with FitStack PRO",
+  title = "Unlock with Daystrong PRO",
   description = "Everything you need to hit your goals, for ₹199 a month.",
   perks = ["AI coach that knows your data", "AI food & workout logging", "Smart training plans", "Progress & recovery analytics"],
 }: PremiumGateProps) {

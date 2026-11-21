@@ -5,8 +5,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/dashboard",
-    name: "FitStack — Nutrition, Training & AI Coach",
-    short_name: "FitStack",
+    name: "Daystrong — Nutrition, Training & AI Coach",
+    short_name: "Daystrong",
     description: "Track Indian food, workouts, water and recovery with an AI coach. ₹199/month.",
     start_url: "/dashboard?source=pwa",
     scope: "/",

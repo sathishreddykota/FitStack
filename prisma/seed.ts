@@ -863,7 +863,7 @@ const exercises = [
 ];
 
 async function main() {
-  console.log("🌱 Starting FitStack database seed...");
+  console.log("🌱 Starting Daystrong database seed...");
 
   // ─── Seed Foods ───────────────────────────────────────────────
   // Idempotent: only insert public foods whose name isn't in the DB yet.

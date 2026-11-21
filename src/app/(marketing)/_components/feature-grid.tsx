@@ -56,7 +56,7 @@ export function FeatureGrid() {
             Everything you need in one place
           </h2>
           <p className="mx-auto max-w-2xl text-text-secondary">
-            Stop using three different apps for your diet, lifting, and cardio. FitStack integrates it all.
+            Stop using three different apps for your diet, lifting, and cardio. Daystrong integrates it all.
           </p>
         </div>
 

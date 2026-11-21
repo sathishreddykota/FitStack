@@ -5,8 +5,8 @@ import { paymentHistory } from "@/server/payments";
 import { SubscriptionClient } from "./subscription-client";
 
 export const metadata: Metadata = {
-  title: "FitStack PRO",
-  description: "Upgrade to FitStack PRO",
+  title: "Daystrong PRO",
+  description: "Upgrade to Daystrong PRO",
 };
 
 export default async function SubscriptionPage() {

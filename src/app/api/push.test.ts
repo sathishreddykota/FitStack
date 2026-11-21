@@ -121,7 +121,7 @@ describe.skipIf(!url)("push notifications API", async () => {
     try {
       const r = await call(testSend.POST, "POST", "/api/push/test");
       expect(r.status).toBe(200);
-      expect(sent.at(-1)).toMatchObject({ token: TOKEN, title: "FitStack notifications are on ✅" });
+      expect(sent.at(-1)).toMatchObject({ token: TOKEN, title: "Daystrong notifications are on ✅" });
       session.clerkId = `${tag}-other`;
       expect((await call(testSend.POST, "POST", "/api/push/test")).status).toBe(409); // no phone
     } finally {

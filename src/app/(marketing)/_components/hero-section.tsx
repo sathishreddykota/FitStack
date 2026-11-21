@@ -37,7 +37,7 @@ export function HeroSection() {
           </Link>
           <Link href="#features">
             <Button variant="glass" size="lg" className="w-full sm:w-auto font-semibold">
-              Explore FitStack
+              Explore Daystrong
             </Button>
           </Link>
         </div>

@@ -3,7 +3,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 
 export const metadata: Metadata = {
   title: "Sign In",
-  description: "Sign in to your FitStack account",
+  description: "Sign in to your Daystrong account",
 };
 
 // Clerk handles the auth logic; the [[...sign-in]] catch-all is required by Clerk.

@@ -3,7 +3,7 @@ import { safeInternalPath } from "./native-push";
 import { isMealLog } from "./api-client";
 
 describe("notification tap targets", () => {
-  it("only opens screens inside FitStack", () => {
+  it("only opens screens inside Daystrong", () => {
     expect(safeInternalPath("/nutrition")).toBe("/nutrition");
     expect(safeInternalPath("/dashboard?x=1")).toBe("/dashboard?x=1");
     expect(safeInternalPath("https://evil.example")).toBeNull();

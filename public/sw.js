@@ -1,9 +1,9 @@
-// FitStack service worker.
+// Daystrong service worker.
 // - App shell + static assets: cache-first (fast launches, works on bad networks)
 // - Pages: network-first, falling back to the offline page
 // - API, auth and payments: never cached (always live, per-user data)
 
-const VERSION = "fitstack-v2";
+const VERSION = "daystrong-v1";
 const STATIC_CACHE = `${VERSION}-static`;
 const OFFLINE_URL = "/offline";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png"];

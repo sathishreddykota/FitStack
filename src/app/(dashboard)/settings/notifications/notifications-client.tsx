@@ -127,7 +127,7 @@ export function NotificationsClient({ initial, phones, serverReady }: { initial:
                   {phoneCount > 0 ? `${phoneCount} phone${phoneCount === 1 ? "" : "s"} connected` : "No phone connected yet"}
                 </p>
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  Notifications go to the FitStack Android app. Sign in there and allow notifications.
+                  Notifications go to the Daystrong Android app. Sign in there and allow notifications.
                 </p>
               </>
             )}

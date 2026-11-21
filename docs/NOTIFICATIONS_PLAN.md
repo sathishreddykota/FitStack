@@ -1,6 +1,6 @@
 # Phone notifications: reminders and achievements
 
-Goal: from a user's **second day** onward, FitStack sends phone notifications when meals or
+Goal: from a user's **second day** onward, Daystrong sends phone notifications when meals or
 daily goals are missed, and celebrates when goals are hit. Notifications come from our server
 (it knows what was logged), so they arrive even if the app hasn't been opened all day.
 
@@ -83,8 +83,8 @@ First launch → ask permission ──►  POST /api/push/devices (save token)
 
 ## Firebase setup (done 2026-11-18)
 
-- Project **FitStack**, id `fitstack-82148` (free Spark plan; Analytics and Gemini off), with the
-  Android app `com.fitstack.app`.
+- Project **Daystrong**, id `fitstack-82148` (free Spark plan; Analytics and Gemini off), with the
+  Android app `com.daystrong.app`.
 - `android/app/google-services.json`: the app's Firebase config (not secret, committed).
 - `FIREBASE_SERVICE_ACCOUNT` in `.env.local`: the service-account key, base64 on one line. Secret,
   never committed. On the host (Vercel) add the same value as an environment variable.
@@ -95,7 +95,7 @@ First launch → ask permission ──►  POST /api/push/devices (save token)
 
 ## Not in this round
 
-- Notifications for people using FitStack in a desktop browser (web push). Possible later with the
+- Notifications for people using Daystrong in a desktop browser (web push). Possible later with the
   same rules engine.
 - Workout, water and sleep reminders. Easy to add once the engine exists.
 

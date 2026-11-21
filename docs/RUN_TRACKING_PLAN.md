@@ -1,9 +1,9 @@
-# FitStack Run Tracking — Implementation Plan
+# Daystrong Run Tracking — Implementation Plan
 
 GPS tracking for **runs, walks, jogs and rides**: live distance, time, pace, route map, splits,
 personal bests and weekly totals. **PRO feature** (included in the 7-day trial, then ₹199/month).
 
-Built the FitStack way: our own design (Ember Night motion style), our own names — functionally on par
+Built the Daystrong way: our own design (Ember Night motion style), our own names — functionally on par
 with the best running apps, not a copy of any one app's look or branding.
 
 ---
@@ -13,10 +13,10 @@ with the best running apps, not a copy of any one app's look or branding.
 A web app (our PWA / Trusted Web Activity) **stops getting GPS when the screen turns off or the user
 switches apps** — Chrome pauses background pages. Real run tracking (phone in pocket, screen off,
 music playing) needs a **native Android shell with a location foreground service** (the persistent
-"FitStack is tracking your run" notification).
+"Daystrong is tracking your run" notification).
 
 **Decision (recommended): switch the Play Store build from TWA to a Capacitor shell.**
-- Still ONE codebase: the Capacitor app loads the deployed FitStack site; only GPS recording uses a
+- Still ONE codebase: the Capacitor app loads the deployed Daystrong site; only GPS recording uses a
   native plugin (`@capgo/capacitor-background-geolocation`, free) with an Android foreground service.
 - Recording starts from a button press in the app → this is *foreground-service* location, so we do
   **not** need the hard-to-get "background location" Play permission. We still declare

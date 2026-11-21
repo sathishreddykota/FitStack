@@ -29,7 +29,7 @@ export function StartGoogle({ id }: { id: string | null }) {
     })().catch((e) => setError(e instanceof Error ? e.message : "Couldn't open Google sign-in."));
   }, [id, isLoaded, signIn, clerk]);
 
-  if (!id) return <NativeAuthShell title="This sign-in link isn't valid" body="Go back to the FitStack app and tap “Continue with Google” again." />;
+  if (!id) return <NativeAuthShell title="This sign-in link isn't valid" body="Go back to the Daystrong app and tap “Continue with Google” again." />;
   if (error) return <NativeAuthShell title="Couldn't open Google" body={error} />;
-  return <NativeAuthShell title="Opening Google…" body="You'll come back to the FitStack app when you're done." spinner />;
+  return <NativeAuthShell title="Opening Google…" body="You'll come back to the Daystrong app when you're done." spinner />;
 }

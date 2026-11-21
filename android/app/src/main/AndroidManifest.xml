@@ -28,12 +28,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Google sign-in returns from the browser tab: com.fitstack.app://auth?id=… -->
+            <!-- Google sign-in returns from the browser tab: com.daystrong.app://auth?id=… -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.fitstack.app" android:host="auth" />
+                <data android:scheme="com.daystrong.app" android:host="auth" />
             </intent-filter>
 
         </activity>

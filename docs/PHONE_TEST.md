@@ -21,7 +21,7 @@ About 20 minutes. Covers notifications step 5 and run-tracking step 7.
 
 | # | Do | Expect |
 |---|---|---|
-| 1 | Open **FitStack** on the phone and sign in | Dashboard loads |
+| 1 | Open **Daystrong** on the phone and sign in | Dashboard loads |
 | 2 | **Nutrition** → add any food | Card: *"Nice log! Want a nudge…"* |
 | 3 | **Turn on reminders** → Android asks → **Allow** | Card closes |
 | 4 | **Settings → Notifications** | *"On for this phone ✓"* |
@@ -35,7 +35,7 @@ About 20 minutes. Covers notifications step 5 and run-tracking step 7.
 | # | Do | Expect |
 |---|---|---|
 | 1 | **Run** → pick **Walk** → wait for GPS "Good" | Map shows where you are |
-| 2 | **Start** → Android asks for location → **While using the app** | Notification *"FitStack is recording"* |
+| 2 | **Start** → Android asks for location → **While using the app** | Notification *"Daystrong is recording"* |
 | 3 | Lock the phone and walk 5 minutes | Notification stays |
 | 4 | Unlock → **Pause** → **Resume** → walk 1 more minute | Timer continues |
 | 5 | **Finish → Save** | Route on the map, splits, saved |
@@ -50,7 +50,7 @@ About 20 minutes. Covers notifications step 5 and run-tracking step 7.
 
 ## If something goes wrong
 
-- **App shows "Can't reach FitStack":** phone not on the same Wi-Fi, or the PC's address changed.
-- **No notification:** Android Settings → Apps → FitStack → Notifications → check
-  "Reminders & goals" is on, and battery saver isn't restricting FitStack.
+- **App shows "Can't reach Daystrong":** phone not on the same Wi-Fi, or the PC's address changed.
+- **No notification:** Android Settings → Apps → Daystrong → Notifications → check
+  "Reminders & goals" is on, and battery saver isn't restricting Daystrong.
 - **GPS stuck on "Searching":** step outside; the first fix can take 30–60 seconds.

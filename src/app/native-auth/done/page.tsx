@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Signed in", robots: { index: false }
 export default async function NativeAuthDone({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
   const { id } = await searchParams;
   if (typeof id !== "string" || !/^[a-z0-9]{10,64}$/.test(id)) {
-    return <NativeAuthShell title="This sign-in link isn't valid" body="Go back to the FitStack app and tap “Continue with Google” again." />;
+    return <NativeAuthShell title="This sign-in link isn't valid" body="Go back to the Daystrong app and tap “Continue with Google” again." />;
   }
   return <DoneClient id={id} />;
 }

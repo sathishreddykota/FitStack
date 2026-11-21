@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:745908319857:android:ae736d033561a904f94dd0",
+        "mobilesdk_app_id": "1:745908319857:android:6868742b40b7b5a6f94dd0",
         "android_client_info": {
-          "package_name": "com.fitstack.app"
+          "package_name": "com.daystrong.app"
         }
       },
       "oauth_client": [],

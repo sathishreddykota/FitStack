@@ -38,12 +38,12 @@ const features = [
   {
     title: "Water & Recovery",
     description: "Track hydration, sleep quality, and daily habits to ensure you recover as hard as you train.",
-    icon: <Droplet className="h-6 w-6 text-blue-400" />
+    icon: <Droplet className="h-6 w-6 text-[var(--color-info-400)]" />
   },
   {
     title: "AI Coach",
     description: "Get personalized insights and adjustments based on your actual logged data.",
-    icon: <BrainCircuit className="h-6 w-6 text-purple-400" />
+    icon: <BrainCircuit className="h-6 w-6 text-[var(--color-fat)]" />
   }
 ];
 
@@ -56,7 +56,7 @@ export function FeatureGrid() {
             Everything you need in one place
           </h2>
           <p className="mx-auto max-w-2xl text-text-secondary">
-            Stop using three different apps for your diet, lifting, and cardio. FitStack integrates it all.
+            Stop using three different apps for your diet, lifting, and cardio. Daystrong integrates it all.
           </p>
         </div>
 

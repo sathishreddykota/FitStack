@@ -1,24 +1,18 @@
-import { NextResponse } from "next/server";
-import { getRequiredUser } from "@/lib/auth";
+import { z } from "zod";
+import { ok, parseQuery, route } from "@/server/http";
+import { requireApiUser } from "@/server/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(req: Request) {
-  try {
-    await getRequiredUser();
-    
-    const { searchParams } = new URL(req.url);
-    const query = searchParams.get("q") || "";
-    
-    const exercises = await prisma.exercise.findMany({
-      where: {
-        name: { contains: query, mode: "insensitive" }
-      },
-      take: 20,
-      orderBy: { name: "asc" }
-    });
-    
-    return NextResponse.json({ exercises });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+// GET /api/workout/exercises?q=bench
+export const GET = route("GET /api/workout/exercises", async (req) => {
+  await requireApiUser();
+  const { q } = parseQuery(req, z.object({ q: z.string().max(60).default("") }));
+  const term = q.trim();
+  const exercises = await prisma.exercise.findMany({
+    where: { isPublic: true, ...(term ? { name: { contains: term, mode: "insensitive" as const } } : {}) },
+    select: { id: true, name: true, primaryMuscles: true, equipment: true, category: true, isKeyLift: true },
+    orderBy: [{ isKeyLift: "desc" }, { name: "asc" }],
+    take: 40,
+  });
+  return ok(exercises);
+});

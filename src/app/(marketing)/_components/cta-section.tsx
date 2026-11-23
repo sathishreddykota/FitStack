@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 export function CtaSection() {
   return (
@@ -9,7 +10,7 @@ export function CtaSection() {
       
       <div className="mx-auto max-w-4xl px-6 relative z-10 text-center">
         <div className="inline-block mb-6 p-3 rounded-2xl bg-surface-1/50 border border-white/10 shadow-elevated">
-          <div className="text-4xl">🏋️</div>
+          <LogoMark size={44} />
         </div>
         
         <h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl text-white mb-6">

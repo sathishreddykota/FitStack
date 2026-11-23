@@ -12,9 +12,21 @@ import { MacroDistributionChart } from "@/components/progress/macro-distribution
 import { LogWeightModal } from "@/components/progress/log-weight-modal";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { formatRelativeDate } from "@/lib/utils";
+import type {
+  getNutritionAnalytics,
+  getRecentPRs,
+  getStrengthProgression,
+  getWorkoutAnalytics,
+} from "@/server/progress";
+
+type NutritionAnalytics = Awaited<ReturnType<typeof getNutritionAnalytics>>;
+type WorkoutAnalytics = Awaited<ReturnType<typeof getWorkoutAnalytics>>;
+type StrengthProgression = Awaited<ReturnType<typeof getStrengthProgression>>;
+type RecentPR = Awaited<ReturnType<typeof getRecentPRs>>[number];
 
 interface ProgressClientProps {
   range: 7 | 30 | 90 | "all";
+  today: string;
   weightData: {
     logs: { date: Date; weightKg: number }[];
     currentWeight: number | null;
@@ -23,9 +35,9 @@ interface ProgressClientProps {
     goalProgress: number;
   };
   nutritionData: {
-    chartData: any[];
+    chartData: NutritionAnalytics["chartData"];
     averages: { calories: number; protein: number; carbs: number; fat: number };
-    targets: any;
+    targets: NutritionAnalytics["targets"];
     daysTracked: number;
     adherence: { calories: number; protein: number };
   };
@@ -34,21 +46,20 @@ interface ProgressClientProps {
     totalSets: number;
     totalReps: number;
     totalVolume: number;
-    chartData: any[];
-    recentSessions: any[];
+    chartData: WorkoutAnalytics["chartData"];
+    recentSessions: WorkoutAnalytics["recentSessions"];
   };
   strengthData: {
-    chartData: any[];
+    chartData: StrengthProgression["chartData"];
     allTimeMax1RM: number;
     allTimeMaxWeight: number;
   };
-  recentPRs: any[];
+  recentPRs: RecentPR[];
   availableExercises: { id: string; name: string }[];
   selectedExerciseId: string;
 }
 
 export function ProgressClient({
-  range,
   weightData,
   nutritionData,
   workoutData,
@@ -137,7 +148,7 @@ export function ProgressClient({
 
         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-text-muted)] mb-1">
-            <Trophy className="h-4 w-4 text-yellow-500" />
+            <Trophy className="h-4 w-4 text-[var(--color-accent-400)]" />
             Volume
           </div>
           <p className="text-2xl font-bold text-[var(--color-text-primary)]">
@@ -150,7 +161,7 @@ export function ProgressClient({
       {/* ── Bodyweight & Goals ──────────────────────── */}
       <section className="space-y-4">
         <h2 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-          <Target className="h-5 w-5 text-[var(--color-accent-400)]" /> Bodyweight & Goals
+          <Target className="h-5 w-5 text-[var(--color-brand-400)]" /> Bodyweight & Goals
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-4">
@@ -353,7 +364,7 @@ export function ProgressClient({
 
           <div className="lg:col-span-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm flex flex-col h-full max-h-[500px]">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-6 flex items-center gap-2">
-               <Trophy className="h-4 w-4 text-yellow-500" /> Recent Personal Records
+               <Trophy className="h-4 w-4 text-[var(--color-accent-400)]" /> Recent Personal Records
             </h3>
             <div className="overflow-y-auto pr-2 space-y-3 flex-1">
                {recentPRs.length > 0 ? (

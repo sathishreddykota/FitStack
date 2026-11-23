@@ -1,141 +1,140 @@
 "use client";
 
 import { useState } from "react";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
-import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, Play, Activity } from "lucide-react";
 import Link from "next/link";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+import { api, errorMessage } from "@/lib/api-client";
+import { addDays, eachDay, endOfMonth, startOfWeek } from "@/server/dates";
 import { cn } from "@/lib/utils";
 
-export function CalendarClient({ initialSessions, userId }: { initialSessions: any[], userId: string }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [sessions, setSessions] = useState(initialSessions);
-  const [isLoading, setIsLoading] = useState(false);
+export interface CalendarSession {
+  id: string;
+  name: string;
+  day: string;
+  status: "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "SKIPPED" | "MISSED";
+}
 
-  const fetchMonthSessions = async (date: Date) => {
-    setIsLoading(true);
+const STATUS_CLS: Record<CalendarSession["status"], string> = {
+  COMPLETED: "bg-[var(--color-success-500)]/10 border-[var(--color-success-500)]/20 text-[var(--color-success-400)]",
+  IN_PROGRESS: "bg-[var(--color-brand-500)]/10 border-[var(--color-brand-500)]/30 text-[var(--color-brand-400)]",
+  SKIPPED: "bg-[var(--color-warning-500)]/10 border-[var(--color-warning-500)]/20 text-[var(--color-warning-400)] line-through",
+  MISSED: "bg-[var(--color-error-500)]/5 border-[var(--color-error-500)]/20 text-[var(--color-error-400)] line-through",
+  PLANNED: "bg-[var(--color-highlight-500)]/10 border-[var(--color-highlight-500)]/20 text-[var(--color-highlight-400)]",
+};
+
+function shiftMonth(month: string, delta: number) {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+  return d.toISOString().slice(0, 7);
+}
+
+export function CalendarClient({ today, initialSessions }: { today: string; initialSessions: CalendarSession[] }) {
+  const [month, setMonth] = useState(today.slice(0, 7));
+  const [sessions, setSessions] = useState(initialSessions);
+  const [loading, setLoading] = useState(false);
+
+  const go = async (delta: number) => {
+    const next = shiftMonth(month, delta);
+    setMonth(next);
+    setLoading(true);
     try {
-      const res = await fetch(`/api/workout/calendar?date=${date.toISOString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSessions(data.sessions);
-      }
+      const data = await api<{ sessions: CalendarSession[] }>(`/api/workout/calendar?month=${next}`);
+      setSessions(data.sessions.map((s) => ({ id: s.id, name: s.name, day: s.day, status: s.status })));
+    } catch (err) {
+      toast.error(errorMessage(err));
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const nextMonth = () => {
-    const next = addMonths(currentDate, 1);
-    setCurrentDate(next);
-    fetchMonthSessions(next);
-  };
+  const first = `${month}-01`;
+  const gridStart = startOfWeek(first);
+  const gridEnd = addDays(startOfWeek(endOfMonth(first)), 6);
+  const days = eachDay(gridStart, gridEnd);
 
-  const prevMonth = () => {
-    const prev = subMonths(currentDate, 1);
-    setCurrentDate(prev);
-    fetchMonthSessions(prev);
-  };
+  // Adherence counts only sessions that are already due.
+  const due = sessions.filter((s) => s.day <= today);
+  const completed = due.filter((s) => s.status === "COMPLETED").length;
+  const adherence = due.length ? Math.round((completed / due.length) * 100) : 0;
+  const monthLabel = new Intl.DateTimeFormat("en-IN", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(`${first}T00:00:00Z`),
+  );
 
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-  
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-
-  // Compute metrics
-  const completedSessions = sessions.filter(s => s.status === "COMPLETED");
-  const adherence = sessions.length > 0 ? Math.round((completedSessions.length / sessions.length) * 100) : 0;
-  
   return (
     <div className="mx-auto max-w-5xl animate-fade-in pb-12">
-      <div className="flex items-center gap-4 mb-8">
-        <Link href="/workout" className="rounded-full p-2 hover:bg-[var(--color-surface)] text-[var(--color-text-muted)] transition-colors">
+      <div className="mb-8 flex items-center gap-4">
+        <Link href="/workout" aria-label="Back" className="rounded-full p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-1)]">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Training Calendar</h1>
-          <p className="text-sm text-[var(--color-text-muted)]">Your complete workout history and schedule.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">Your schedule and history.</p>
         </div>
       </div>
 
-      {/* Summary Banner */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-[var(--color-text-muted)]">Completed</h3>
-          <p className="mt-2 text-3xl font-black text-[var(--color-text-primary)]">{completedSessions.length}</p>
-        </div>
-        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-[var(--color-text-muted)]">Planned</h3>
-          <p className="mt-2 text-3xl font-black text-[var(--color-text-primary)]">{sessions.length}</p>
-        </div>
-        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-[var(--color-text-muted)]">Adherence</h3>
-          <p className="mt-2 text-3xl font-black text-[var(--color-brand-400)]">{adherence}%</p>
-        </div>
+      <div className="mb-8 grid grid-cols-3 gap-3">
+        {[
+          ["Completed", String(completed)],
+          ["Scheduled", String(sessions.length)],
+          ["Adherence", `${adherence}%`],
+        ].map(([k, v]) => (
+          <div key={k} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 sm:p-6">
+            <p className="text-xs font-semibold text-[var(--color-text-muted)] sm:text-sm">{k}</p>
+            <p className="mt-2 text-2xl font-black text-[var(--color-text-primary)] sm:text-3xl">{v}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Calendar UI */}
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-1)]">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] p-4">
-          <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
-            {format(currentDate, "MMMM yyyy")}
-          </h2>
+          <h2 className="text-lg font-bold text-[var(--color-text-primary)]">{monthLabel}</h2>
           <div className="flex gap-2">
-            <button onClick={prevMonth} className="rounded-lg p-2 hover:bg-[var(--color-background)] transition-colors text-[var(--color-text-primary)]">
+            <button onClick={() => go(-1)} aria-label="Previous month" className="rounded-lg p-2 text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <button onClick={nextMonth} className="rounded-lg p-2 hover:bg-[var(--color-background)] transition-colors text-[var(--color-text-primary)]">
+            <button onClick={() => go(1)} aria-label="Next month" className="rounded-lg p-2 text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]">
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
         </div>
-        
-        <div className="grid grid-cols-7 border-b border-[var(--color-border)] bg-[var(--color-background)]/50">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
-            <div key={day} className="py-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
-              {day}
+        <div className="grid grid-cols-7 border-b border-[var(--color-border)]">
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+            <div key={d} className="py-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+              {d}
             </div>
           ))}
         </div>
-
-        <div className={cn("grid grid-cols-7 transition-opacity", isLoading ? "opacity-50" : "opacity-100")}>
-          {days.map((day, idx) => {
-            const isCurrentMonth = isSameMonth(day, currentDate);
-            const isToday = isSameDay(day, new Date());
-            const daySessions = sessions.filter(s => isSameDay(new Date(s.date), day));
-            
+        <div className={cn("grid grid-cols-7 transition-opacity", loading && "opacity-50")}>
+          {days.map((day, i) => {
+            const inMonth = day.startsWith(month);
+            const list = sessions.filter((s) => s.day === day);
             return (
-              <div 
-                key={day.toISOString()} 
+              <div
+                key={day}
                 className={cn(
-                  "min-h-[120px] border-b border-r border-[var(--color-border)] p-2 transition-colors hover:bg-[var(--color-background)] cursor-pointer group",
-                  !isCurrentMonth ? "bg-[var(--color-background)]/30 opacity-40" : "",
-                  idx % 7 === 6 ? "border-r-0" : "" // Remove right border for Sunday
+                  "min-h-[88px] border-b border-r border-[var(--color-border)] p-1.5 sm:min-h-[120px] sm:p-2",
+                  !inMonth && "opacity-40",
+                  i % 7 === 6 && "border-r-0",
                 )}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className={cn(
-                    "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold",
-                    isToday ? "bg-[var(--color-brand-500)] text-white shadow-[var(--shadow-glow-brand)]" : "text-[var(--color-text-primary)]"
-                  )}>
-                    {format(day, "d")}
-                  </span>
-                </div>
-                
+                <span
+                  className={cn(
+                    "mb-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold",
+                    day === today ? "bg-[var(--color-brand-500)] text-[var(--color-on-brand)]" : "text-[var(--color-text-primary)]",
+                  )}
+                >
+                  {Number(day.slice(8))}
+                </span>
                 <div className="space-y-1">
-                  {daySessions.map(session => (
-                    <div 
-                      key={session.id} 
-                      className={cn(
-                        "rounded px-2 py-1 text-xs font-bold border truncate",
-                        session.status === "COMPLETED" ? "bg-[var(--color-success-500)]/10 border-[var(--color-success-500)]/20 text-[var(--color-success-400)]" :
-                        session.status === "SKIPPED" ? "bg-[var(--color-warning-500)]/10 border-[var(--color-warning-500)]/20 text-[var(--color-warning-400)]" :
-                        "bg-[var(--color-highlight-500)]/10 border-[var(--color-highlight-500)]/20 text-[var(--color-highlight-400)]"
-                      )}
+                  {list.map((s) => (
+                    <Link
+                      key={s.id}
+                      href={`/workout/session/${s.id}`}
+                      className={cn("block truncate rounded border px-1.5 py-1 text-[10px] font-bold sm:text-xs", STATUS_CLS[s.status])}
                     >
-                      {session.name}
-                    </div>
+                      {s.name}
+                    </Link>
                   ))}
                 </div>
               </div>

@@ -8,7 +8,7 @@ export function ProgressShowcase() {
           Don&apos;t just train. Measure progress.
         </h2>
         <p className="mx-auto max-w-2xl text-lg text-text-secondary mb-16">
-          What gets measured gets managed. FitStack visualizes your data so you know exactly what is working.
+          What gets measured gets managed. Daystrong visualizes your data so you know exactly what is working.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

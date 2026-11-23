@@ -10,16 +10,18 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  type TooltipProps,
 } from "recharts";
 import { Flame, Dumbbell } from "lucide-react";
+import type { getNutritionAnalytics, getWorkoutAnalytics } from "@/server/progress";
 
 interface DashboardChartsProps {
-  nutritionData: any[];
-  workoutData: any[];
+  nutritionData: Awaited<ReturnType<typeof getNutritionAnalytics>>["chartData"];
+  workoutData: Awaited<ReturnType<typeof getWorkoutAnalytics>>["chartData"];
   calorieTarget: number | null;
 }
 
-const CustomNutritionTooltip = ({ active, payload, label }: any) => {
+const CustomNutritionTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -51,7 +53,7 @@ const CustomNutritionTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const CustomWorkoutTooltip = ({ active, payload, label }: any) => {
+const CustomWorkoutTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (

@@ -1,4 +1,4 @@
--- FitStack Food Database Seed
+-- Daystrong Food Database Seed
 -- Run this in Supabase SQL Editor to populate the food database
 -- All nutrition values are per 100g
 

@@ -15,6 +15,7 @@ interface MealItemRowProps {
     id: string;
     food: { name: string; brand: string | null };
     quantityG: number;
+    quantity: number | null;
     servingUnit: ServingUnit;
     calories: number;
     proteinG: number;
@@ -27,17 +28,16 @@ interface MealItemRowProps {
 
 export function MealItemRow({ item, onRefresh }: MealItemRowProps) {
   const [editing, setEditing] = useState(false);
-  const [quantity, setQuantity] = useState(item.quantityG.toString());
+  // Older rows only stored grams; newer rows keep what the user typed (e.g. 2 piece).
+  const amount = item.quantity ?? item.quantityG;
+  const unit: ServingUnit = item.quantity != null ? item.servingUnit : "g";
+  const [quantity, setQuantity] = useState(amount.toString());
   const { updateItem, deleteItem, isLoading } = useNutrition(onRefresh);
 
   const handleSave = async () => {
     const q = parseFloat(quantity);
-    if (isNaN(q) || q < 1) return;
-    const ok = await updateItem({
-      itemId: item.id,
-      quantityG: q,
-      servingUnit: item.servingUnit,
-    });
+    if (isNaN(q) || q <= 0) return;
+    const ok = await updateItem({ itemId: item.id, quantity: q, unit });
     if (ok) setEditing(false);
   };
 
@@ -104,7 +104,7 @@ export function MealItemRow({ item, onRefresh }: MealItemRowProps) {
               max={5000}
               autoFocus
             />
-            <span className="text-xs text-[var(--color-text-muted)]">{item.servingUnit}</span>
+            <span className="text-xs text-[var(--color-text-muted)]">{unit}</span>
             <button
               onClick={handleSave}
               disabled={isLoading}
@@ -114,7 +114,7 @@ export function MealItemRow({ item, onRefresh }: MealItemRowProps) {
               <Check className="h-3.5 w-3.5" />
             </button>
             <button
-              onClick={() => { setEditing(false); setQuantity(item.quantityG.toString()); }}
+              onClick={() => { setEditing(false); setQuantity(amount.toString()); }}
               className="rounded-lg p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)]"
               title="Cancel"
             >
@@ -128,7 +128,7 @@ export function MealItemRow({ item, onRefresh }: MealItemRowProps) {
                 {Math.round(item.calories)} kcal
               </p>
               <p className="text-xs text-[var(--color-text-muted)]">
-                {item.quantityG}{item.servingUnit}
+                {amount}{unit === "g" || unit === "ml" ? unit : ` ${unit}`}{unit !== "g" && item.quantityG > 0 ? ` · ${Math.round(item.quantityG)}g` : ""}
               </p>
             </div>
             {/* Actions — always visible on mobile, hover on desktop */}

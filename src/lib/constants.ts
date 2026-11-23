@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-// FitStack Constants
+// Daystrong Constants
 // ─────────────────────────────────────────────
 
 // Activity level multipliers (Mifflin-St Jeor TDEE)
@@ -136,6 +136,7 @@ export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/nutrition", label: "Nutrition", icon: "UtensilsCrossed" },
   { href: "/workout", label: "Workout", icon: "Dumbbell" },
+  { href: "/activity", label: "Run", icon: "Footprints" },
   { href: "/progress", label: "Progress", icon: "TrendingUp" },
   { href: "/water", label: "Water", icon: "Droplets" },
   { href: "/recovery", label: "Recovery", icon: "Moon" },
@@ -172,7 +173,7 @@ export const SUBSCRIPTION_FEATURES = {
   ],
 } as const;
 
-export const APP_NAME = "FitStack" as const;
+export const APP_NAME = "Daystrong" as const;
 export const APP_TAGLINE = "Build the body. Build the strength. Build the athlete." as const;
 export const APP_DESCRIPTION =
   "Track nutrition, strength training, conditioning, recovery and progress in one place." as const;

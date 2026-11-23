@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 export function Footer() {
   return (
@@ -7,9 +8,9 @@ export function Footer() {
         {/* Brand */}
         <div className="col-span-1 md:col-span-1">
           <Link href="/" className="flex items-center gap-2 mb-4">
-            <div className="text-2xl">🏋️</div>
+            <LogoMark size={30} />
             <span className="text-xl font-extrabold tracking-tight">
-              FitStack
+              Daystrong
             </span>
           </Link>
           <p className="text-sm text-text-muted">
@@ -49,7 +50,7 @@ export function Footer() {
         </div>
       </div>
       <div className="mx-auto mt-12 max-w-7xl px-6 border-t border-border/50 pt-8 flex items-center justify-between text-xs text-text-muted">
-        <p>© {new Date().getFullYear()} FitStack. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Daystrong. All rights reserved.</p>
         <p>Built for athletes.</p>
       </div>
     </footer>

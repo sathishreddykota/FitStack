@@ -29,6 +29,7 @@ import {
   APP_NAME,
 } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 // ─────────────────────────────────────────────
 // Step Definitions
@@ -230,7 +231,7 @@ export default function OnboardingPage() {
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       });
       const json = await res.json();
 
@@ -239,7 +240,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      toast.success("Welcome to FitStack! 🎉");
+      toast.success("Welcome to Daystrong! 🎉");
       router.push("/dashboard");
     } catch {
       toast.error("Network error. Please check your connection and try again.");
@@ -257,11 +258,7 @@ export default function OnboardingPage() {
         {/* Header */}
         <header className="flex-none flex items-center justify-between px-6 py-5 sticky top-0 bg-[var(--color-surface-0)]/80 backdrop-blur-md z-20 border-b border-[var(--color-border-subtle)] lg:border-none">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg brand-gradient flex items-center justify-center shadow-[var(--shadow-glow-brand)]">
-              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-white" aria-hidden="true">
-                <path d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4M6 8h12M6 16h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
+            <LogoMark size={28} className="shadow-[var(--shadow-glow-brand)]" />
             <span className="font-bold text-[var(--color-text-primary)] tracking-tight">{APP_NAME}</span>
           </div>
           <div className="flex items-center gap-3">
@@ -535,7 +532,7 @@ export default function OnboardingPage() {
                         className={cn(
                           "flex h-12 w-12 items-center justify-center rounded-xl border text-sm font-bold transition-all",
                           formData.trainingDaysPerWeek === d
-                            ? "brand-gradient border-transparent text-white shadow-[var(--shadow-glow-brand)]"
+                            ? "brand-gradient border-transparent text-[var(--color-on-brand)] shadow-[var(--shadow-glow-brand)]"
                             : "border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-3)]",
                         )}
                       >
@@ -854,7 +851,7 @@ export default function OnboardingPage() {
                     ) : (
                       <>
                         <CheckCircle2 className="h-4 w-4" />
-                        Start FitStack
+                        Start Daystrong
                       </>
                     )}
                   </Button>
@@ -870,7 +867,7 @@ export default function OnboardingPage() {
       <div className="hidden lg:flex flex-1 relative bg-[var(--color-surface-1)] border-l border-[var(--color-border-subtle)] flex-col items-center justify-center p-12 overflow-hidden">
         {/* Abstract Background Effects */}
         <div className="absolute inset-0 hero-gradient opacity-30" />
-        <div className="absolute top-1/4 -right-20 w-96 h-96 bg-[var(--color-accent-500)]/10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/4 -right-20 w-96 h-96 bg-[var(--color-brand-500)]/10 blur-[100px] rounded-full pointer-events-none" />
         <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-[var(--color-brand-500)]/10 blur-[100px] rounded-full pointer-events-none" />
         
         {/* Dynamic Content */}
@@ -889,7 +886,7 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div className="flex flex-col items-center text-center gap-6">
               <div className="h-24 w-24 rounded-2xl bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center shadow-elevated">
-                <Target className="h-10 w-10 text-[var(--color-accent-400)]" />
+                <Target className="h-10 w-10 text-[var(--color-brand-400)]" />
               </div>
               <h2 className="text-3xl font-bold text-[var(--color-text-primary)]">What&apos;s the mission?</h2>
               <p className="text-[var(--color-text-secondary)] text-lg">
@@ -915,7 +912,7 @@ export default function OnboardingPage() {
               </div>
               <h2 className="text-3xl font-bold text-[var(--color-text-primary)]">How do you eat?</h2>
               <p className="text-[var(--color-text-secondary)] text-lg">
-                FitStack adapts to any dietary lifestyle. Your macros will perfectly reflect what you actually want to eat.
+                Daystrong adapts to any dietary lifestyle. Your macros will perfectly reflect what you actually want to eat.
               </p>
             </div>
           )}
@@ -926,7 +923,7 @@ export default function OnboardingPage() {
               </div>
               <h2 className="text-3xl font-bold text-[var(--color-text-primary)]">You&apos;re ready.</h2>
               <p className="text-[var(--color-text-secondary)] text-lg">
-                We&apos;ve crunched the numbers. Your personalized FitStack dashboard is ready to go. Let&apos;s get to work.
+                We&apos;ve crunched the numbers. Your personalized Daystrong dashboard is ready to go. Let&apos;s get to work.
               </p>
             </div>
           )}

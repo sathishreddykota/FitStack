@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { api, ApiError } from "@/lib/api-client";
 
 interface AIInsight {
   title: string;
@@ -18,49 +18,22 @@ export function AIInsightCard() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    async function fetchInsight() {
-      try {
-        // Simple 24h cache in localStorage to save API costs
-        const cachedStr = localStorage.getItem("fitstack_daily_insight");
-        if (cachedStr) {
-          const cached = JSON.parse(cachedStr);
-          const now = new Date().getTime();
-          if (now - cached.timestamp < 24 * 60 * 60 * 1000) {
-            setInsight(cached.data);
-            setIsLoading(false);
-            return;
-          }
-        }
-
-        const res = await fetch("/api/coach/insight");
-        if (res.status === 403) {
+    // The server caches one insight per user per day, so this is cheap to call.
+    api<{ title: string; insight: string; action: string }>("/api/coach/insight")
+      .then((d) => setInsight({ title: d.title, insight: d.insight, actionableAdvice: d.action }))
+      .catch((err) => {
+        if (err instanceof ApiError && err.isProRequired) {
           setInsight({
-            title: "Unlock Proactive Coaching",
-            insight: "Upgrade to PRO to get daily, AI-powered insights based on your recent activity, customized just for you.",
-            actionableAdvice: "Join PRO today and supercharge your fitness journey.",
-            isUpgradePrompt: true
+            title: "Your personal AI coach",
+            insight: "PRO members get a daily insight built from their own food, training and recovery data.",
+            actionableAdvice: "Get PRO for ₹199/month.",
+            isUpgradePrompt: true,
           });
-          setIsLoading(false);
-          return;
+        } else {
+          setError(true);
         }
-        
-        if (!res.ok) throw new Error("Failed to fetch insight");
-        
-        const data = await res.json();
-        setInsight(data);
-        
-        localStorage.setItem("fitstack_daily_insight", JSON.stringify({
-          data,
-          timestamp: new Date().getTime()
-        }));
-      } catch (err) {
-        setError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchInsight();
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   if (error) return null; // Fallback gracefully if AI is down
@@ -96,7 +69,7 @@ export function AIInsightCard() {
               {insight.isUpgradePrompt ? (
                 <Link 
                   href="/settings/subscription"
-                  className="inline-flex items-center gap-2 bg-[var(--color-brand-500)] text-black font-black uppercase tracking-widest py-3 px-6 rounded-full shadow-[0_0_15px_rgba(255,87,34,0.3)] hover:bg-white transition-all"
+                  className="inline-flex items-center gap-2 bg-[var(--color-brand-500)] text-black font-black uppercase tracking-widest py-3 px-6 rounded-full shadow-[0_0_15px_rgba(255,107,44,0.3)] hover:bg-white transition-all"
                 >
                   <Sparkles className="h-4 w-4" />
                   Upgrade to Pro
@@ -107,7 +80,7 @@ export function AIInsightCard() {
                     <ArrowRight className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Today's Action</h4>
+                    <h4 className="text-sm font-bold text-[var(--color-text-primary)] mb-1">Today&apos;s Action</h4>
                     <p className="text-sm text-[var(--color-text-secondary)]">{insight.actionableAdvice}</p>
                   </div>
                 </div>

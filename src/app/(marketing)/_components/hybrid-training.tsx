@@ -19,7 +19,7 @@ export function HybridTraining() {
               More than muscle.<br />More than strength.
             </h2>
             <p className="text-lg text-text-secondary mb-8">
-              True athleticism requires a balance of raw strength, muscular endurance, and cardiovascular health. FitStack allows you to build training blocks that incorporate all three seamlessly.
+              True athleticism requires a balance of raw strength, muscular endurance, and cardiovascular health. Daystrong allows you to build training blocks that incorporate all three seamlessly.
             </p>
             
             <div className="space-y-4">

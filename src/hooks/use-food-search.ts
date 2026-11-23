@@ -56,9 +56,14 @@ export function useFoodSearch(debounceMs = 300) {
     }, debounceMs);
   }, [debounceMs]);
 
-  useEffect(() => {
-    search(query);
-  }, [query, search]);
+  // Search from the change handler rather than an effect on `query`.
+  const updateQuery = useCallback(
+    (q: string) => {
+      setQuery(q);
+      search(q);
+    },
+    [search],
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -70,9 +75,9 @@ export function useFoodSearch(debounceMs = 300) {
 
   const clearSearch = useCallback(() => {
     setQuery("");
-    setResults([]);
+    search(""); // cancels any pending timer / request and clears results
     setError(null);
-  }, []);
+  }, [search]);
 
-  return { query, setQuery, results, isLoading, error, clearSearch };
+  return { query, setQuery: updateQuery, results, isLoading, error, clearSearch };
 }

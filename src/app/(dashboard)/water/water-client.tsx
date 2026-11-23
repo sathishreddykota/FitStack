@@ -2,22 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Droplets, Trash2, Calendar, Target } from "lucide-react";
+import { Droplets, Trash2, Target } from "lucide-react";
 import { WaterTracker } from "@/components/nutrition/water-tracker";
 import { WaterTrendChart } from "./components/water-trend-chart";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { api } from "@/lib/api-client";
+import type { waterForDay, waterTrend } from "@/server/tracking";
 
 interface WaterClientProps {
   initialData: {
     targetMl: number;
     totalMl: number;
-    logs: any[];
+    logs: Awaited<ReturnType<typeof waterForDay>>["logs"];
   };
   trendsData: {
-    chartData: any[];
+    chartData: Awaited<ReturnType<typeof waterTrend>>["chartData"];
     insights: {
       avgMl: number;
       maxStreak: number;
@@ -32,15 +33,10 @@ export function WaterClient({ initialData, trendsData }: WaterClientProps) {
 
   const handleAddWater = async (amountMl: number) => {
     try {
-      const res = await fetch("/api/nutrition/water", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountMl }),
-      });
-      if (!res.ok) throw new Error("Failed to log water");
+      await api("/api/nutrition/water", { body: { amountMl } });
       router.refresh();
       return true;
-    } catch (error) {
+    } catch {
       toast.error("Failed to log water");
       return false;
     }
@@ -49,13 +45,10 @@ export function WaterClient({ initialData, trendsData }: WaterClientProps) {
   const handleDeleteWater = async (id: string) => {
     try {
       setIsDeleting(id);
-      const res = await fetch(`/api/nutrition/water/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete water log");
+      await api(`/api/nutrition/water/${id}`, { method: "DELETE" });
       router.refresh();
       toast.success("Log removed");
-    } catch (error) {
+    } catch {
       toast.error("Failed to remove water log");
     } finally {
       setIsDeleting(null);
@@ -89,7 +82,7 @@ export function WaterClient({ initialData, trendsData }: WaterClientProps) {
         {/* Today's Log Feed */}
         <div className="lg:col-span-1 space-y-4 min-w-0">
           <h2 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)] flex items-center gap-2">
-            Today's Logs
+            Today&apos;s Logs
           </h2>
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm min-h-[300px]">
             {initialData.logs.length > 0 ? (

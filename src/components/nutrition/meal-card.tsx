@@ -8,6 +8,7 @@ import { useState, useRef } from "react";
 import { ChevronDown, Plus, Heart, Loader2, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { api, ApiError, errorMessage } from "@/lib/api-client";
 import { MealItemRow } from "./meal-item-row";
 import { FoodSearchModal } from "./food-search-modal";
 import type { MealType, ServingUnit } from "@/types/nutrition.types";
@@ -34,7 +35,7 @@ const MEAL_TYPE_CONFIG: Record<
   SNACK: {
     label: "Snack",
     emoji: "🍎",
-    gradient: "from-[var(--color-accent-400)]/20 to-transparent",
+    gradient: "from-[var(--color-fiber)]/20 to-transparent",
   },
   PRE_WORKOUT: {
     label: "Pre-Workout",
@@ -53,6 +54,7 @@ interface MealItemData {
   foodId: string;
   food: { name: string; brand: string | null };
   quantityG: number;
+  quantity: number | null;
   servingUnit: ServingUnit;
   calories: number;
   proteinG: number;
@@ -87,6 +89,8 @@ export function MealCard({
   onRefresh,
 }: MealCardProps) {
   const [expanded, setExpanded] = useState(defaultOpen || items.length > 0);
+  // Foods on screen when the card first appeared; anything logged after that pops in.
+  const [initialIds] = useState(() => new Set(items.map((i) => i.id)));
   const [modalOpen, setModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [mealName, setMealName] = useState("");
@@ -102,24 +106,15 @@ export function MealCard({
     if (!mealName.trim()) return;
     try {
       setIsSubmitting(true);
-      const res = await fetch("/api/nutrition/saved-meals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: mealName.trim(),
-          items: items.map((item) => ({
-            foodId: item.foodId,
-            quantityG: item.quantityG,
-            servingUnit: item.servingUnit,
-          })),
-        }),
+      // The server copies exactly what is logged for this meal (quantities + units).
+      await api("/api/nutrition/saved-meals", {
+        body: { name: mealName.trim(), fromLog: { date, mealType } },
       });
-      if (!res.ok) throw new Error("Failed to save meal");
       toast.success("Meal saved to My Meals!");
       setIsSaving(false);
       setMealName("");
     } catch (error) {
-      toast.error("Failed to save meal. Please try again.");
+      toast.error(errorMessage(error, "Failed to save meal. Please try again."));
     } finally {
       setIsSubmitting(false);
     }
@@ -129,21 +124,21 @@ export function MealCard({
     if (!magicText.trim()) return;
     try {
       setIsSubmitting(true);
-      const res = await fetch("/api/nutrition/voice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: magicText, mealType, date }),
+      const { items: logged } = await api<{ items: { name: string; calories: number }[] }>("/api/nutrition/meals/ai", {
+        body: { text: magicText, mealType, date },
       });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to parse magic log");
-      }
-      toast.success("Magic Log success!");
+      toast.success(`Logged ${logged.map((i) => `${i.name} (${i.calories} kcal)`).join(", ")}`);
       setMagicText("");
       setIsMagicLogging(false);
       onRefresh();
-    } catch (error: any) {
-      toast.error(error.message || "Could not parse that food. Please try again.");
+    } catch (error) {
+      if (error instanceof ApiError && error.isProRequired) {
+        toast.error("AI logging is a PRO feature.", {
+          action: { label: "Upgrade", onClick: () => (window.location.href = "/settings/subscription") },
+        });
+      } else {
+        toast.error(errorMessage(error, "Could not parse that food. Please try again."));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -213,7 +208,7 @@ export function MealCard({
           )}
 
           {!hasItems && (
-            <span className="text-xs text-[var(--color-text-disabled)]">Empty</span>
+            <span className="text-xs text-[var(--color-text-muted)]">Empty</span>
           )}
 
           <ChevronDown
@@ -226,11 +221,13 @@ export function MealCard({
 
         {/* Items */}
         {expanded && (
-          <div className="border-t border-[var(--color-border-subtle)] bg-white/50">
+          <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-0)]/60">
             {hasItems ? (
               <div className="divide-y divide-[var(--color-border-subtle)]">
                 {items.map((item) => (
-                  <MealItemRow key={item.id} item={item} onRefresh={onRefresh} />
+                  <div key={item.id} className={initialIds.has(item.id) ? undefined : "fs-pop"}>
+                    <MealItemRow item={item} onRefresh={onRefresh} />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -247,7 +244,7 @@ export function MealCard({
                     onClick={() => setModalOpen(true)}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold shadow-sm",
-                      "bg-[var(--color-brand-500)] text-white",
+                      "bg-[var(--color-brand-500)] text-[var(--color-on-brand)]",
                       "hover:bg-[var(--color-brand-400)] transition-all duration-200 hover:-translate-y-0.5",
                     )}
                   >
@@ -259,7 +256,7 @@ export function MealCard({
                     onClick={() => setIsMagicLogging(true)}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold shadow-sm",
-                      "bg-white border border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-brand-400)] hover:text-[var(--color-brand-500)] transition-all",
+                      "bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-brand-400)] hover:text-[var(--color-brand-500)] transition-all",
                     )}
                   >
                     <Sparkles className="h-4 w-4" />
@@ -272,7 +269,7 @@ export function MealCard({
                         onClick={() => setIsSaving(true)}
                         className={cn(
                           "flex-none px-4 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold shadow-sm",
-                          "bg-white border border-[var(--color-border)] text-[var(--color-text-primary)] hover:text-red-500",
+                          "bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-primary)] hover:text-[var(--color-error-500)]",
                           "hover:bg-[var(--color-surface-2)] transition-all hover:-translate-y-0.5"
                         )}
                         title="Save as Meal"
@@ -290,7 +287,7 @@ export function MealCard({
                     autoFocus
                     type="text" 
                     placeholder="e.g. 2 eggs and a slice of toast" 
-                    className="flex-1 rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm focus:outline-none focus:border-[var(--color-brand-500)] shadow-sm"
+                    className="flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3 text-sm focus:outline-none focus:border-[var(--color-brand-500)] shadow-sm"
                     value={magicText}
                     onChange={(e) => setMagicText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && submitMagicLog()}
@@ -298,14 +295,14 @@ export function MealCard({
                   <button 
                     onClick={submitMagicLog}
                     disabled={!magicText.trim() || isSubmitting}
-                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-brand-500)] text-white disabled:opacity-50 shadow-sm flex items-center gap-2"
+                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-brand-500)] text-[var(--color-on-brand)] disabled:opacity-50 shadow-sm flex items-center gap-2"
                   >
                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </button>
                   <button 
                     onClick={() => { setIsMagicLogging(false); setMagicText(""); }}
                     disabled={isSubmitting}
-                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-white border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shadow-sm"
+                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shadow-sm"
                   >
                     Cancel
                   </button>
@@ -318,7 +315,7 @@ export function MealCard({
                     autoFocus
                     type="text" 
                     placeholder="Meal Name (e.g., Morning Oats)" 
-                    className="flex-1 rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm focus:outline-none focus:border-[var(--color-brand-500)] shadow-sm"
+                    className="flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3 text-sm focus:outline-none focus:border-[var(--color-brand-500)] shadow-sm"
                     value={mealName}
                     onChange={(e) => setMealName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSaveMeal()}
@@ -326,14 +323,14 @@ export function MealCard({
                   <button 
                     onClick={handleSaveMeal}
                     disabled={!mealName.trim() || isSubmitting}
-                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-brand-500)] text-white disabled:opacity-50 shadow-sm"
+                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-brand-500)] text-[var(--color-on-brand)] disabled:opacity-50 shadow-sm"
                   >
                     {isSubmitting ? "Saving..." : "Save"}
                   </button>
                   <button 
                     onClick={() => { setIsSaving(false); setMealName(""); }}
                     disabled={isSubmitting}
-                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-white border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shadow-sm"
+                    className="px-6 py-3 text-sm font-bold rounded-2xl bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shadow-sm"
                   >
                     Cancel
                   </button>

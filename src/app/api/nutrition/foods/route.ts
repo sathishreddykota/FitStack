@@ -1,35 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getInternalUserId } from "@/lib/auth";
-import { searchFoods } from "@/services/nutrition.service";
-import type { ApiResponse } from "@/types/api.types";
+import { z } from "zod";
+import { ok, parseQuery, route } from "@/server/http";
+import { requireApiUser } from "@/server/auth";
+import { searchFoods } from "@/server/nutrition/service";
 
-// ─────────────────────────────────────────────
-// GET /api/nutrition/foods?q=&limit=&category=
-// ─────────────────────────────────────────────
+const query = z.object({ q: z.string().max(80).default(""), limit: z.coerce.number().int().min(1).max(50).default(25) });
 
-export async function GET(
-  req: NextRequest,
-): Promise<NextResponse<ApiResponse<Awaited<ReturnType<typeof searchFoods>>>>> {
-  try {
-    const userId = await getInternalUserId();
-
-    const { searchParams } = new URL(req.url);
-    const query = searchParams.get("q") ?? "";
-    const category = searchParams.get("category") ?? undefined;
-    const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 50);
-
-    if (query.length < 1) {
-      return NextResponse.json({ success: true, data: [] });
-    }
-
-    const foods = await searchFoods({ query, category, limit, userId });
-
-    return NextResponse.json({ success: true, data: foods });
-  } catch (error) {
-    console.error("[GET /api/nutrition/foods]", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to search foods." },
-      { status: 500 },
-    );
-  }
-}
+// GET /api/nutrition/foods?q=dosa&limit=25
+export const GET = route("GET /api/nutrition/foods", async (req) => {
+  const user = await requireApiUser();
+  const { q, limit } = parseQuery(req, query);
+  return ok(await searchFoods(user.id, q, limit));
+});

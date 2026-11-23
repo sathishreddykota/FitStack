@@ -6,13 +6,37 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
+  type TooltipProps,
 } from "recharts";
-import { cn } from "@/lib/utils";
 
 interface MacroDistributionChartProps {
   proteinG: number;
   carbsG: number;
   fatG: number;
+}
+
+function MacroTooltip({ active, payload, totalCals }: TooltipProps<number, string> & { totalCals: number }) {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const percentage = ((data.value / totalCals) * 100).toFixed(1);
+    
+    return (
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-elevated)]">
+        <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+          {data.name}
+        </p>
+        <div className="flex items-baseline gap-2">
+          <span className="text-lg font-bold" style={{ color: data.color }}>
+            {Math.round(data.grams)}g
+          </span>
+          <span className="text-sm font-medium text-[var(--color-text-muted)]">
+            ({percentage}%)
+          </span>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
 
 export function MacroDistributionChart({ proteinG, carbsG, fatG }: MacroDistributionChartProps) {
@@ -38,30 +62,6 @@ export function MacroDistributionChart({ proteinG, carbsG, fatG }: MacroDistribu
     { name: "Fat", value: fatCals, grams: fatG, color: "var(--color-fat)" },
   ];
 
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      const percentage = ((data.value / totalCals) * 100).toFixed(1);
-      
-      return (
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-elevated)]">
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
-            {data.name}
-          </p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-bold" style={{ color: data.color }}>
-              {Math.round(data.grams)}g
-            </span>
-            <span className="text-sm font-medium text-[var(--color-text-muted)]">
-              ({percentage}%)
-            </span>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className="h-64 w-full relative">
       <ResponsiveContainer width="100%" height="100%">
@@ -80,7 +80,7 @@ export function MacroDistributionChart({ proteinG, carbsG, fatG }: MacroDistribu
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "transparent" }} />
+          <Tooltip content={<MacroTooltip totalCals={totalCals} />} cursor={{ fill: "transparent" }} />
         </PieChart>
       </ResponsiveContainer>
 

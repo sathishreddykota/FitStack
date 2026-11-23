@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser, UserButton } from "@clerk/nextjs";
 import {
+  Footprints,
   LayoutDashboard,
   UtensilsCrossed,
   Dumbbell,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/constants";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 // ─────────────────────────────────────────────
 // Icon map (matches icon names in NAV_ITEMS)
@@ -24,6 +26,7 @@ import { APP_NAME } from "@/lib/constants";
 
 const ICON_MAP = {
   LayoutDashboard,
+  Footprints,
   UtensilsCrossed,
   Dumbbell,
   TrendingUp,
@@ -42,6 +45,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/nutrition", label: "Nutrition", icon: "UtensilsCrossed" },
   { href: "/workout", label: "Workout", icon: "Dumbbell" },
+  { href: "/activity/record", label: "Run", icon: "Footprints" },
   { href: "/progress", label: "Progress", icon: "TrendingUp" },
   { href: "/water", label: "Water", icon: "Droplets" },
   { href: "/recovery", label: "Recovery", icon: "Moon" },
@@ -51,8 +55,8 @@ const NAV_ITEMS = [
 ] as const;
 
 // Separate main nav from bottom items
-const MAIN_NAV = NAV_ITEMS.slice(0, 7);
-const BOTTOM_NAV = NAV_ITEMS.slice(7);
+const MAIN_NAV = NAV_ITEMS.slice(0, 8);
+const BOTTOM_NAV = NAV_ITEMS.slice(8);
 
 // ─────────────────────────────────────────────
 // NavItem Component
@@ -113,21 +117,7 @@ export function Sidebar({ subInfo }: { subInfo?: { isTrial: boolean; daysLeft: n
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-[var(--color-border-subtle)] bg-[var(--color-surface-0)] h-screen sticky top-0">
       {/* Logo */}
       <Link href="/dashboard" className="flex items-center gap-2.5 px-4 py-5 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-1)] transition-colors">
-        <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center shadow-[var(--shadow-glow-brand)]">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-5 h-5 text-white"
-            aria-hidden="true"
-          >
-            <path
-              d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4M6 8h12M6 16h12"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
+        <LogoMark size={32} className="shadow-[var(--shadow-glow-brand)]" />
         <span className="text-base font-bold tracking-tight text-[var(--color-text-primary)]">
           {APP_NAME}
         </span>
@@ -140,16 +130,16 @@ export function Sidebar({ subInfo }: { subInfo?: { isTrial: boolean; daysLeft: n
 
       {/* Main navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {subInfo?.isTrial && !subInfo?.hasPaid && (
+        {subInfo && !subInfo.hasPaid && (
           <div className="mb-4 p-3 rounded-xl bg-[var(--color-brand-500)]/10 border border-[var(--color-brand-500)]/20 animate-fade-in">
             <p className="text-xs font-bold text-[var(--color-brand-400)] mb-1">
-              Free Trial
+              {subInfo.isTrial ? "PRO Trial" : "Free Plan"}
             </p>
             <p className="text-xs text-[var(--color-text-secondary)] mb-2">
-              {subInfo.daysLeft} {subInfo.daysLeft === 1 ? 'day' : 'days'} left in your trial.
+              {subInfo.isTrial ? `${subInfo.daysLeft} ${subInfo.daysLeft === 1 ? 'day' : 'days'} of PRO left.` : 'AI coach, plans & analytics for ₹199/mo.'}
             </p>
-            <Link href="/settings/subscription" className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-white py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
-              Upgrade Now
+            <Link href="/settings/subscription" className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-[var(--color-on-brand)] py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
+              Get PRO
             </Link>
           </div>
         )}
@@ -231,21 +221,7 @@ export function MobileSidebar({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--color-border-subtle)]">
           <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-7 h-7 rounded-lg brand-gradient flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="w-4 h-4 text-white"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4M6 8h12M6 16h12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
+            <LogoMark size={28} />
             <span className="font-bold text-[var(--color-text-primary)]">{APP_NAME}</span>
             {subInfo?.hasPaid && (
                <span className="bg-[var(--color-brand-500)]/20 text-[var(--color-brand-500)] text-[10px] font-black uppercase tracking-widest py-0.5 px-2 rounded-full border border-[var(--color-brand-500)]/30">
@@ -264,16 +240,16 @@ export function MobileSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {subInfo?.isTrial && !subInfo?.hasPaid && (
+          {subInfo && !subInfo.hasPaid && (
             <div className="mb-4 p-3 rounded-xl bg-[var(--color-brand-500)]/10 border border-[var(--color-brand-500)]/20 animate-fade-in">
               <p className="text-xs font-bold text-[var(--color-brand-400)] mb-1">
-                Free Trial
+                {subInfo.isTrial ? "PRO Trial" : "Free Plan"}
               </p>
               <p className="text-xs text-[var(--color-text-secondary)] mb-2">
-                {subInfo.daysLeft} {subInfo.daysLeft === 1 ? 'day' : 'days'} left in your trial.
+                {subInfo.isTrial ? `${subInfo.daysLeft} ${subInfo.daysLeft === 1 ? 'day' : 'days'} of PRO left.` : 'AI coach, plans & analytics for ₹199/mo.'}
               </p>
-              <Link href="/settings/subscription" onClick={onClose} className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-white py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
-                Upgrade Now
+              <Link href="/settings/subscription" onClick={onClose} className="block text-center w-full text-xs font-bold bg-[var(--color-brand-500)] text-[var(--color-on-brand)] py-1.5 rounded-lg hover:bg-[var(--color-brand-400)] transition-colors">
+                Get PRO
               </Link>
             </div>
           )}

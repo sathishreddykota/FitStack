@@ -11,9 +11,10 @@ import {
   ReferenceLine,
   Cell,
 } from "recharts";
+import type { waterTrend } from "@/server/tracking";
 
 interface WaterTrendChartProps {
-  data: any[];
+  data: Awaited<ReturnType<typeof waterTrend>>["chartData"];
 }
 
 export function WaterTrendChart({ data }: WaterTrendChartProps) {

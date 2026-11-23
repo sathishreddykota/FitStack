@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { APP_NAME } from "@/lib/constants";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 // ─────────────────────────────────────────────
 // Auth Layout
@@ -20,11 +21,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/80 via-transparent to-black/90" />
         
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-500)] flex items-center justify-center shadow-[0_0_20px_rgba(255,87,34,0.4)]">
-            <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-black" aria-hidden="true">
-              <path d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4M6 8h12M6 16h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-            </svg>
-          </div>
+          <LogoMark size={40} className="shadow-[var(--shadow-glow-brand)]" />
           <span className="text-2xl font-black tracking-tight text-white uppercase">
             {APP_NAME}
           </span>
@@ -45,11 +42,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         
         {/* Mobile Header (Hidden on Desktop) */}
         <div className="absolute top-8 left-8 lg:hidden flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-500)] flex items-center justify-center shadow-[0_0_15px_rgba(255,87,34,0.4)]">
-            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-black" aria-hidden="true">
-              <path d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4M6 8h12M6 16h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-            </svg>
-          </div>
+          <LogoMark size={32} className="shadow-[var(--shadow-glow-brand)]" />
           <span className="text-xl font-black tracking-tight text-white uppercase">
             {APP_NAME}
           </span>

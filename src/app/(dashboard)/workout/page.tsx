@@ -1,27 +1,45 @@
-import { getRequiredUser } from "@/lib/auth";
 import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
+import { entitlementOf, requireOnboardedUser, todayOf } from "@/server/auth";
+import { addDays, startOfWeek } from "@/server/dates";
+import { CALENDAR_WEEKS, scheduleWeeks, sessionsInRange } from "@/server/workout/service";
 import { WorkoutHubClient } from "./workout-hub-client";
-import { getCalendarSessions } from "@/lib/services/workout-service";
-import { startOfWeek, endOfWeek } from "date-fns";
-import { PremiumGate } from "@/components/shared/premium-gate";
 
 export const metadata: Metadata = { title: "Workout" };
 
+// Workout hub. Manual logging is free; plans are PRO.
 export default async function WorkoutPage() {
-  const user = await getRequiredUser();
-  
-  const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
-  const weekEnd = endOfWeek(today, { weekStartsOn: 1 }); // Sunday
+  const user = await requireOnboardedUser();
+  const today = todayOf(user).str;
+  const weekStart = startOfWeek(today);
 
-  const sessions = await getCalendarSessions(user.id, weekStart, weekEnd);
+  const plan = await prisma.trainingPlan.findFirst({
+    where: { userId: user.id, isActive: true },
+    select: { id: true, name: true },
+  });
+  if (plan) await scheduleWeeks(user.id, plan.id, today, CALENDAR_WEEKS);
+  const sessions = await sessionsInRange(user.id, weekStart, addDays(weekStart, 6), today);
 
   return (
-    <PremiumGate title="Unlock Workout Tracking" description="Upgrade to PRO to build custom training plans and log your heavy lifts.">
-      <WorkoutHubClient 
-        initialSessions={sessions} 
-        userId={user.id}
-      />
-    </PremiumGate>
+    <WorkoutHubClient
+      today={today}
+      weekStart={weekStart}
+      initialSessions={sessions.map((s) => ({
+        id: s.id,
+        name: s.name,
+        day: s.day,
+        status: s.status,
+        durationMinutes: s.durationMinutes,
+        exercises: s.exercises.map((e) => ({
+          id: e.id,
+          name: e.exercise.name,
+          targetSets: e.targetSets,
+          targetReps: e.targetReps,
+          targetWeightKg: e.targetWeightKg,
+        })),
+      }))}
+      planName={plan?.name ?? null}
+      isPro={entitlementOf(user).isPro}
+    />
   );
 }

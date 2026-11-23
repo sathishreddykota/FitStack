@@ -1,52 +1,24 @@
-import { NextResponse } from "next/server";
-import { getRequiredUser } from "@/lib/auth";
-import { updateWorkoutStatus, startWorkout, completeWorkout } from "@/lib/services/workout-service";
-import { z } from "zod";
+import { ok, parseBody, route } from "@/server/http";
+import { requireApiUser } from "@/server/auth";
+import { applySessionAction, deleteSession, getSession } from "@/server/workout/service";
+import { sessionActionSchema } from "@/server/workout/schemas";
 
-const updateSchema = z.object({
-  action: z.enum(["START", "COMPLETE", "SKIP", "RESCHEDULE"]),
-  reason: z.string().optional(),
-  newDate: z.string().optional(),
-  durationMinutes: z.number().optional(),
+type Ctx = { params: Promise<{ id: string }> };
+
+export const GET = route<Ctx>("GET /api/workout/session/:id", async (_req, { params }) => {
+  const user = await requireApiUser();
+  return ok(await getSession(user.id, (await params).id));
 });
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await getRequiredUser();
-    const { id } = await params;
-    const body = await req.json();
-    
-    const parsed = updateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid data", details: parsed.error }, { status: 400 });
-    }
+// PATCH { action: START | COMPLETE | SKIP | UNSKIP | RESCHEDULE | RENAME }
+export const PATCH = route<Ctx>("PATCH /api/workout/session/:id", async (req, { params }) => {
+  const user = await requireApiUser();
+  const input = await parseBody(req, sessionActionSchema);
+  return ok(await applySessionAction(user.id, (await params).id, input));
+});
 
-    const { action, reason, newDate, durationMinutes } = parsed.data;
-
-    if (action === "START") {
-      const session = await startWorkout(id, user.id);
-      return NextResponse.json({ session });
-    }
-    
-    if (action === "COMPLETE") {
-      const session = await completeWorkout(id, user.id, durationMinutes);
-      return NextResponse.json({ session });
-    }
-    
-    if (action === "SKIP" || action === "RESCHEDULE") {
-      const session = await updateWorkoutStatus(id, user.id, action, { 
-        reason, 
-        newDate: newDate ? new Date(newDate) : undefined 
-      });
-      return NextResponse.json({ session });
-    }
-
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-  } catch (error: any) {
-    console.error("Session update error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+export const DELETE = route<Ctx>("DELETE /api/workout/session/:id", async (_req, { params }) => {
+  const user = await requireApiUser();
+  await deleteSession(user.id, (await params).id);
+  return ok({ deleted: true });
+});

@@ -1,395 +1,434 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Play, Plus, Trash2, Clock, Check, Mic, Loader2, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Check, Clock, Loader2, Mic, Plus, Sparkles, Trash2, Trophy, X } from "lucide-react";
 import { toast } from "sonner";
+import { api, ApiError, errorMessage } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import { useSpeech } from "@/hooks/use-speech";
 import { ExerciseSearchModal } from "@/components/workout/exercise-search-modal";
 
-export function SessionClient({ session, userId }: { session: any, userId: string }) {
+// ─────────────────────────────────────────────
+// Live workout logger. Every change is its own small API call that returns
+// the saved row (with its real id) — no background "sync" of the whole
+// session, so nothing can be duplicated or lost.
+// ─────────────────────────────────────────────
+
+export interface SetData {
+  id: string;
+  setNumber: number;
+  weightKg: number | null;
+  reps: number | null;
+  completedAt: string | null;
+  isPersonalRecord: boolean;
+}
+export interface ExerciseData {
+  id: string;
+  exerciseId: string;
+  targetSets: number | null;
+  targetReps: string | null;
+  targetWeightKg: number | null;
+  exercise: { id: string; name: string };
+  sets: SetData[];
+}
+export interface SessionData {
+  id: string;
+  name: string;
+  status: "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "SKIPPED" | "MISSED";
+  startedAt: string | null;
+  durationMinutes: number | null;
+  exercises: ExerciseData[];
+  previous: Record<string, { weightKg: number | null; reps: number | null }[]>;
+}
+
+const REST_SECONDS = 90;
+
+function useElapsed(startedAt: string | null, running: boolean) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [running]);
+  if (!startedAt) return null;
+  const s = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+export function SessionClient({ initial, isPro }: { initial: SessionData; isPro: boolean }) {
   const router = useRouter();
-  const [exercises, setExercises] = useState(session.exercises);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [activeTimer, setActiveTimer] = useState<number | null>(null);
-  const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
-  const [isMagicLogging, setIsMagicLogging] = useState(false);
+  const [session, setSession] = useState(initial);
+  const [rest, setRest] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [magicOpen, setMagicOpen] = useState(false);
   const [magicText, setMagicText] = useState("");
+  const speech = useSpeech(setMagicText);
 
-  const recognitionRef = useRef<any>(null);
-
-  // Auto-sync debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      syncSession();
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [exercises]);
+  const done = session.status === "COMPLETED";
+  const elapsed = useElapsed(session.startedAt, !done);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (activeTimer !== null && activeTimer > 0) {
-      interval = setInterval(() => {
-        setActiveTimer((prev) => (prev ? prev - 1 : 0));
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [activeTimer]);
+    if (rest <= 0) return;
+    const t = setTimeout(() => setRest((r) => r - 1), 1000);
+    return () => clearTimeout(t);
+  }, [rest]);
 
-  const syncSession = async () => {
-    setIsSyncing(true);
+  const reload = useCallback(async () => {
+    setSession(await api<SessionData>(`/api/workout/session/${session.id}`));
+  }, [session.id]);
+
+  const patchSetLocal = (setId: string, patch: Partial<SetData>) =>
+    setSession((s) => ({
+      ...s,
+      exercises: s.exercises.map((e) => ({ ...e, sets: e.sets.map((x) => (x.id === setId ? { ...x, ...patch } : x)) })),
+    }));
+
+  /** Save weight/reps when an input loses focus. */
+  const saveField = async (set: SetData, field: "weightKg" | "reps", raw: string) => {
+    const value = raw === "" ? null : Number(raw);
+    if (value !== null && (Number.isNaN(value) || value < 0)) return;
+    if (value === set[field]) return;
+    patchSetLocal(set.id, { [field]: value });
     try {
-      await fetch(`/api/workout/session/${session.id}/sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ exercises }),
-      });
-    } catch (error) {
-      console.error("Sync failed", error);
-    } finally {
-      setIsSyncing(false);
+      const saved = await api<SetData>(`/api/workout/sets/${set.id}`, { method: "PATCH", body: { [field]: value } });
+      patchSetLocal(set.id, saved);
+    } catch (err) {
+      toast.error(errorMessage(err, "Couldn't save that set."));
     }
   };
 
-  const handleUpdateSet = (exIndex: number, setIndex: number, field: string, value: any) => {
-    const newExercises = [...exercises];
-    newExercises[exIndex].sets[setIndex][field] = value;
-    
-    // Auto-check if both reps and weight are filled
-    const set = newExercises[exIndex].sets[setIndex];
-    if (field === 'completedAt' && value !== null) {
-       // Started rest timer on set complete
-       setActiveTimer(90); // 90s default rest
-    }
-
-    setExercises(newExercises);
-  };
-
-  const toggleSetComplete = (exIndex: number, setIndex: number) => {
-    const set = exercises[exIndex].sets[setIndex];
-    const isCompleted = !!set.completedAt;
-    handleUpdateSet(exIndex, setIndex, "completedAt", isCompleted ? null : new Date().toISOString());
-  };
-
-  const addSet = (exIndex: number) => {
-    const newExercises = [...exercises];
-    const ex = newExercises[exIndex];
-    const lastSet = ex.sets[ex.sets.length - 1];
-    
-    ex.sets.push({
-      id: `temp-${Date.now()}`,
-      sessionExerciseId: ex.id,
-      setNumber: ex.sets.length + 1,
-      weightKg: lastSet ? lastSet.weightKg : "",
-      reps: lastSet ? lastSet.reps : "",
-      completedAt: null,
-    });
-    setExercises(newExercises);
-  };
-
-  const addExercise = (exercise: any) => {
-    const newEx = {
-      id: `temp-ex-${Date.now()}`,
-      exerciseId: exercise.id,
-      sessionId: session.id,
-      orderIndex: exercises.length,
-      targetSets: 3,
-      targetReps: 10,
-      targetWeightKg: 0,
-      exercise,
-      sets: [
-        {
-          id: `temp-set-${Date.now()}`,
-          setNumber: 1,
-          weightKg: "",
-          reps: "",
-          completedAt: null
-        }
-      ]
+  const toggleDone = async (set: SetData) => {
+    const completing = !set.completedAt;
+    // Read the inputs directly: the user may tap Done before the field's blur-save has landed.
+    const read = (prefix: string, fallback: number | null) => {
+      const el = document.getElementById(`${prefix}-${set.id}`) as HTMLInputElement | null;
+      if (!el || el.value === "") return fallback;
+      const n = Number(el.value);
+      return Number.isNaN(n) || n < 0 ? fallback : n;
     };
-    setExercises([...exercises, newEx]);
-  };
-
-  const finishWorkout = async () => {
-    await syncSession(); // Force sync first
-    
+    const weightKg = read("w", set.weightKg);
+    const reps = read("r", set.reps);
+    if (completing && !reps) {
+      toast.error("Enter reps first.");
+      return;
+    }
+    setBusy(set.id);
     try {
-      const res = await fetch(`/api/workout/session/${session.id}`, {
+      const saved = await api<SetData>(`/api/workout/sets/${set.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "COMPLETE", durationMinutes: 60 }), // simplified duration
+        body: completing ? { completed: true, weightKg, reps: Math.round(reps!) } : { completed: false },
       });
-      if (res.ok) {
-        toast.success("Workout completed! Great job.");
-        router.push("/workout");
+      patchSetLocal(set.id, saved);
+      if (completing) {
+        setRest(REST_SECONDS);
+        if (session.status !== "IN_PROGRESS") setSession((s) => ({ ...s, status: "IN_PROGRESS", startedAt: s.startedAt ?? new Date().toISOString() }));
+        if (saved.isPersonalRecord) toast.success("🏆 New personal record!");
       }
-    } catch (e: any) {
-      toast.error("Failed to complete workout");
-    }
-  };
-
-  const toggleVoiceInput = () => {
-    if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
-      return;
-    }
-
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      toast.error("Voice recognition is not supported in this browser.");
-      return;
-    }
-
-    // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    
-    recognition.continuous = true; // Keep listening until they stop
-    recognition.interimResults = true; // Show text as they speak
-    recognition.lang = 'en-US';
-
-    let originalInput = magicText;
-    if (originalInput && !originalInput.endsWith(' ')) {
-      originalInput += ' ';
-    }
-
-    recognition.onstart = () => {
-      setIsListening(true);
-      toast.info("Listening... Click mic again to stop.");
-    };
-
-    recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
-      }
-
-      originalInput += finalTranscript;
-      setMagicText(originalInput + interimTranscript);
-    };
-
-    recognition.onerror = (event: any) => {
-      if (event.error !== 'no-speech') {
-        toast.error("Voice recognition failed: " + event.error);
-      }
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
-  };
-
-  const submitMagicLog = async () => {
-    if (!magicText.trim()) return;
-    
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-    
-    setIsProcessingVoice(true);
-    try {
-      const res = await fetch(`/api/workout/session/${session.id}/magic`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: magicText }),
-      });
-      
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || "Failed to process magic log");
-      
-      toast.success("Magically added exercises!");
-      setMagicText("");
-      setIsMagicLogging(false);
-      
-      // We should ideally fetch the latest session data from the server, or trigger a page refresh
-      // For now, we'll reload the page to get the updated DB state with the exact exercise matches
-      window.location.reload();
-      
-    } catch (error: any) {
-      toast.error(error.message || "Failed to parse workout. Try again.");
+    } catch (err) {
+      toast.error(errorMessage(err));
     } finally {
-      setIsProcessingVoice(false);
+      setBusy(null);
     }
   };
+
+  const addSet = async (ex: ExerciseData) => {
+    setBusy(ex.id);
+    try {
+      const saved = await api<SetData>(`/api/workout/session-exercises/${ex.id}/sets`, { method: "POST" });
+      setSession((s) => ({
+        ...s,
+        exercises: s.exercises.map((e) => (e.id === ex.id ? { ...e, sets: [...e.sets, saved] } : e)),
+      }));
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const deleteSet = async (set: SetData) => {
+    try {
+      await api(`/api/workout/sets/${set.id}`, { method: "DELETE" });
+      await reload(); // set numbers are renumbered server-side
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  const addExercise = async (exercise: { id: string }) => {
+    setPickerOpen(false);
+    try {
+      const created = await api<ExerciseData>(`/api/workout/session/${session.id}/exercises`, {
+        body: { exerciseId: exercise.id },
+      });
+      await reload();
+      toast.success(`${created.exercise.name} added`);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  const removeExercise = async (ex: ExerciseData) => {
+    if (!confirm(`Remove ${ex.exercise.name} and its sets?`)) return;
+    try {
+      await api(`/api/workout/session-exercises/${ex.id}`, { method: "DELETE" });
+      setSession((s) => ({ ...s, exercises: s.exercises.filter((e) => e.id !== ex.id) }));
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  const finish = async () => {
+    setBusy("finish");
+    try {
+      const s = await api<{ durationMinutes: number }>(`/api/workout/session/${session.id}`, {
+        method: "PATCH",
+        body: { action: "COMPLETE" },
+      });
+      toast.success(`Workout done in ${s.durationMinutes} min 💪`);
+      router.push("/workout");
+      router.refresh();
+    } catch (err) {
+      toast.error(errorMessage(err));
+      setBusy(null);
+    }
+  };
+
+  const submitMagic = async () => {
+    if (!magicText.trim()) return;
+    speech.stop();
+    setBusy("magic");
+    try {
+      const r = await api<{ added: { name: string; sets: number }[]; skipped: number }>(
+        `/api/workout/session/${session.id}/magic`,
+        { body: { text: magicText } },
+      );
+      toast.success(`Added ${r.added.map((a) => `${a.name} (${a.sets})`).join(", ")}`);
+      if (r.skipped) toast.info(`${r.skipped} exercise(s) weren't recognised.`);
+      setMagicText("");
+      setMagicOpen(false);
+      await reload();
+    } catch (err) {
+      if (err instanceof ApiError && err.isProRequired) router.push("/settings/subscription");
+      else toast.error(errorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const completedSets = session.exercises.reduce((n, e) => n + e.sets.filter((s) => s.completedAt).length, 0);
 
   return (
-    <div className="mx-auto max-w-3xl pb-24 animate-fade-in">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-background)]/80 backdrop-blur p-4">
-        <Link href="/workout" className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+    <div className="mx-auto max-w-3xl animate-fade-in pb-32">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-[var(--color-border)] bg-[var(--color-surface-0)]/90 p-4 backdrop-blur">
+        <Link href="/workout" aria-label="Back" className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-lg font-bold text-[var(--color-text-primary)]">{session.name}</h1>
-        <button 
-          onClick={finishWorkout}
-          className="rounded-xl bg-[var(--color-brand-500)] px-4 py-2 text-sm font-bold text-white shadow-sm hover:brightness-110"
-        >
-          Finish
-        </button>
-      </div>
-
-      {activeTimer !== null && activeTimer > 0 && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[var(--color-surface)] border border-[var(--color-brand-500)]/30 px-6 py-3 shadow-xl flex items-center gap-3 animate-in slide-in-from-bottom-5">
-           <Clock className="h-5 w-5 text-[var(--color-brand-400)] animate-pulse" />
-           <span className="font-mono text-xl font-bold text-[var(--color-text-primary)]">
-             {Math.floor(activeTimer / 60)}:{(activeTimer % 60).toString().padStart(2, "0")}
-           </span>
-           <button onClick={() => setActiveTimer(0)} className="ml-2 text-xs font-semibold text-[var(--color-text-muted)] hover:text-white">Skip</button>
+        <div className="min-w-0 text-center">
+          <h1 className="truncate text-lg font-bold text-[var(--color-text-primary)]">{session.name}</h1>
+          <p className="text-xs text-[var(--color-text-muted)]">
+            {done ? `Completed · ${session.durationMinutes ?? "—"} min` : elapsed ? `${elapsed} · ${completedSets} sets` : "Not started"}
+          </p>
         </div>
-      )}
-
-      <div className="p-4 space-y-6">
-        {exercises.map((ex: any, exIndex: number) => (
-          <div key={ex.id} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm overflow-hidden">
-            <div className="bg-[var(--color-border)]/50 p-4">
-              <h2 className="font-bold text-[var(--color-text-primary)] text-lg">{ex.exercise.name}</h2>
-              {ex.targetSets && ex.targetReps && (
-                <p className="text-sm text-[var(--color-text-muted)] mt-1">Target: {ex.targetSets} sets × {ex.targetReps}</p>
-              )}
-            </div>
-            
-            <div className="p-4 space-y-3">
-              <div className="grid grid-cols-[3rem_1fr_1fr_3rem] gap-2 mb-2 text-xs font-semibold uppercase text-[var(--color-text-muted)] text-center">
-                <div>Set</div>
-                <div>kg</div>
-                <div>Reps</div>
-                <div>Done</div>
-              </div>
-
-              {ex.sets.map((set: any, setIndex: number) => {
-                const isCompleted = !!set.completedAt;
-                
-                return (
-                  <div key={set.id} className={cn("grid grid-cols-[3rem_1fr_1fr_3rem] gap-2 items-center transition-all", isCompleted ? "opacity-60" : "")}>
-                    <div className="text-center font-semibold text-[var(--color-text-muted)] text-sm">
-                      {set.setNumber}
-                    </div>
-                    <div>
-                      <input 
-                        type="number" 
-                        value={set.weightKg || ""}
-                        onChange={(e) => handleUpdateSet(exIndex, setIndex, "weightKg", Number(e.target.value))}
-                        disabled={isCompleted}
-                        className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-2 text-center font-bold text-[var(--color-text-primary)] focus:border-[var(--color-brand-500)] focus:outline-none disabled:bg-transparent"
-                        placeholder="—"
-                      />
-                    </div>
-                    <div>
-                      <input 
-                        type="number" 
-                        value={set.reps || ""}
-                        onChange={(e) => handleUpdateSet(exIndex, setIndex, "reps", Number(e.target.value))}
-                        disabled={isCompleted}
-                        className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-2 text-center font-bold text-[var(--color-text-primary)] focus:border-[var(--color-brand-500)] focus:outline-none disabled:bg-transparent"
-                        placeholder="—"
-                      />
-                    </div>
-                    <button
-                      onClick={() => toggleSetComplete(exIndex, setIndex)}
-                      className={cn(
-                        "flex h-10 w-10 mx-auto items-center justify-center rounded-lg border transition-colors",
-                        isCompleted 
-                          ? "bg-[var(--color-success-500)]/20 border-[var(--color-success-500)]/30 text-[var(--color-success-400)]" 
-                          : "bg-[var(--color-background)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-brand-400)] hover:text-[var(--color-brand-400)]"
-                      )}
-                    >
-                      <Check className="h-5 w-5" />
-                    </button>
-                  </div>
-                );
-              })}
-              
-              <button 
-                onClick={() => addSet(exIndex)}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] p-3 text-sm font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-background)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                <Plus className="h-4 w-4" /> Add Set
-              </button>
-            </div>
-          </div>
-        ))}
-
-        <button 
-          onClick={() => setIsExerciseModalOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] p-4 text-sm font-bold text-[var(--color-brand-400)] hover:bg-[var(--color-surface)] transition-colors"
-        >
-          <Plus className="h-5 w-5" /> Add Exercise
-        </button>
-
-        {!isMagicLogging ? (
-          <button 
-            onClick={() => setIsMagicLogging(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm font-bold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)] transition-colors"
+        {!done ? (
+          <button
+            onClick={finish}
+            disabled={busy === "finish" || completedSets === 0}
+            className="rounded-xl bg-[var(--color-brand-500)] px-4 py-2 text-sm font-bold text-[var(--color-on-brand)] disabled:opacity-40"
           >
-            <Sparkles className="h-5 w-5 text-purple-400" /> Magic Log
+            {busy === "finish" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Finish"}
           </button>
         ) : (
-          <div className="flex flex-col gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm animate-in slide-in-from-bottom-2">
-            <div className="relative flex items-center">
-              <input 
-                autoFocus
-                type="text" 
-                placeholder="e.g. 3 sets of bench press 10 reps at 100kg" 
-                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-3 pr-12 text-sm focus:outline-none focus:border-purple-500 text-[var(--color-text-primary)]"
-                value={magicText}
-                onChange={(e) => setMagicText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && submitMagicLog()}
-                disabled={isProcessingVoice}
-              />
-              <button
-                type="button"
-                onClick={toggleVoiceInput}
-                disabled={isProcessingVoice}
-                className={cn(
-                  "absolute right-3 p-1.5 rounded-md transition-all",
-                  isListening ? "bg-red-500/10 text-red-500 animate-pulse" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]"
-                )}
-                title={isListening ? "Stop listening" : "Speak"}
-              >
-                <Mic className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex gap-2 mt-2">
-              <button 
-                onClick={submitMagicLog}
-                disabled={!magicText.trim() || isProcessingVoice}
-                className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-lg bg-purple-500 text-white disabled:opacity-50 hover:brightness-110 transition-all"
-              >
-                {isProcessingVoice ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {isProcessingVoice ? "Analyzing..." : "Log Magic Workout"}
-              </button>
-              <button 
-                onClick={() => { setIsMagicLogging(false); setMagicText(""); }}
-                disabled={isProcessingVoice}
-                className="px-6 py-3 text-sm font-bold rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-background)] transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+          <span className="w-16" />
         )}
       </div>
 
-      <ExerciseSearchModal 
-        isOpen={isExerciseModalOpen} 
-        onClose={() => setIsExerciseModalOpen(false)} 
-        onSelect={addExercise} 
-      />
+      {rest > 0 && (
+        <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-[var(--color-brand-500)]/30 bg-[var(--color-surface-1)] px-6 py-3 shadow-xl">
+          <Clock className="h-5 w-5 animate-pulse text-[var(--color-brand-400)]" />
+          <span className="font-mono text-xl font-bold text-[var(--color-text-primary)]">
+            {Math.floor(rest / 60)}:{String(rest % 60).padStart(2, "0")}
+          </span>
+          <button onClick={() => setRest((r) => r + 30)} className="text-xs font-semibold text-[var(--color-text-muted)]">
+            +30s
+          </button>
+          <button onClick={() => setRest(0)} className="text-xs font-semibold text-[var(--color-text-muted)]">
+            Skip
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-6 p-4">
+        {session.exercises.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-muted)]">
+            Add your first exercise to start logging.
+          </p>
+        )}
+
+        {session.exercises.map((ex) => {
+          const prev = session.previous[ex.exerciseId];
+          return (
+            <div key={ex.id} className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-1)]">
+              <div className="flex items-start justify-between gap-3 bg-[var(--color-surface-2)] p-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[var(--color-text-primary)]">{ex.exercise.name}</h2>
+                  <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                    {ex.targetSets && ex.targetReps ? `Target ${ex.targetSets} × ${ex.targetReps}` : "No target"}
+                    {prev?.length ? ` · Last: ${prev.map((p) => `${p.weightKg ?? "BW"}×${p.reps ?? "?"}`).join(", ")}` : ""}
+                  </p>
+                </div>
+                {!done && (
+                  <button onClick={() => removeExercise(ex)} aria-label="Remove exercise" className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-error-400)]">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2 p-4">
+                <div className="grid grid-cols-[2.5rem_1fr_1fr_2.75rem_2rem] gap-2 text-center text-xs font-semibold uppercase text-[var(--color-text-muted)]">
+                  <span>Set</span>
+                  <span>kg</span>
+                  <span>Reps</span>
+                  <span>Done</span>
+                  <span />
+                </div>
+                {ex.sets.map((set) => {
+                  const completed = !!set.completedAt;
+                  return (
+                    <div key={set.id} className={cn("grid grid-cols-[2.5rem_1fr_1fr_2.75rem_2rem] items-center gap-2", completed && "opacity-70")}>
+                      <span className="flex items-center justify-center gap-1 text-sm font-semibold text-[var(--color-text-muted)]">
+                        {set.isPersonalRecord ? <Trophy className="fs-pop h-4 w-4 text-[var(--color-accent-400)]" /> : set.setNumber}
+                      </span>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.5"
+                        min={0}
+                        defaultValue={set.weightKg ?? ""}
+                        key={`w-${set.id}-${set.weightKg}`}
+                        id={`w-${set.id}`}
+                        disabled={completed || done}
+                        onBlur={(e) => saveField(set, "weightKg", e.target.value)}
+                        placeholder="—"
+                        className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-0)] p-2 text-center font-bold text-[var(--color-text-primary)] focus:border-[var(--color-brand-500)] focus:outline-none disabled:bg-transparent"
+                      />
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        defaultValue={set.reps ?? ""}
+                        key={`r-${set.id}-${set.reps}`}
+                        id={`r-${set.id}`}
+                        disabled={completed || done}
+                        onBlur={(e) => saveField(set, "reps", e.target.value)}
+                        placeholder="—"
+                        className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-0)] p-2 text-center font-bold text-[var(--color-text-primary)] focus:border-[var(--color-brand-500)] focus:outline-none disabled:bg-transparent"
+                      />
+                      <button
+                        onClick={() => toggleDone(set)}
+                        disabled={busy === set.id || done}
+                        aria-label={completed ? "Mark not done" : "Mark done"}
+                        className={cn(
+                          "mx-auto flex h-10 w-10 items-center justify-center rounded-lg border transition-colors",
+                          completed
+                            ? "border-[var(--color-success-500)]/30 bg-[var(--color-success-500)]/20 text-[var(--color-success-400)]"
+                            : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-brand-400)]",
+                        )}
+                      >
+                        {busy === set.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-5 w-5" />}
+                      </button>
+                      {!done && !completed ? (
+                        <button onClick={() => deleteSet(set)} aria-label="Delete set" className="text-[var(--color-text-muted)] hover:text-[var(--color-error-400)]">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <span />
+                      )}
+                    </div>
+                  );
+                })}
+                {!done && (
+                  <button
+                    onClick={() => addSet(ex)}
+                    disabled={busy === ex.id}
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] p-3 text-sm font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                  >
+                    <Plus className="h-4 w-4" /> Add set
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {!done && (
+          <>
+            <button
+              onClick={() => setPickerOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] p-4 text-sm font-bold text-[var(--color-brand-400)]"
+            >
+              <Plus className="h-5 w-5" /> Add exercise
+            </button>
+
+            {!magicOpen ? (
+              <button
+                onClick={() => (isPro ? setMagicOpen(true) : router.push("/settings/subscription"))}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 text-sm font-bold text-[var(--color-text-primary)]"
+              >
+                <Sparkles className="h-5 w-5 text-[var(--color-brand-400)]" /> Log by voice or text {!isPro && "· PRO"}
+              </button>
+            ) : (
+              <div className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4">
+                <div className="relative">
+                  <textarea
+                    autoFocus
+                    rows={2}
+                    placeholder="e.g. bench press 3 sets of 8 at 60 kg, then pull-ups 3x10"
+                    value={magicText}
+                    onChange={(e) => setMagicText(e.target.value)}
+                    disabled={busy === "magic"}
+                    className="w-full resize-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-0)] px-4 py-3 pr-12 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-brand-500)] focus:outline-none"
+                  />
+                  {speech.supported && (
+                    <button
+                      type="button"
+                      onClick={() => (speech.listening ? speech.stop() : speech.start(magicText, (m) => toast.error(m)))}
+                      aria-label={speech.listening ? "Stop listening" : "Speak"}
+                      className={cn("absolute right-3 top-3 rounded-md p-1.5", speech.listening ? "animate-pulse bg-[var(--color-error-500)]/10 text-[var(--color-error-500)]" : "text-[var(--color-text-muted)]")}
+                    >
+                      <Mic className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={submitMagic}
+                    disabled={!magicText.trim() || busy === "magic"}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-brand-500)] py-3 text-sm font-bold text-[var(--color-on-brand)] disabled:opacity-50"
+                  >
+                    {busy === "magic" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {busy === "magic" ? "Reading…" : "Add to workout"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      speech.stop();
+                      setMagicOpen(false);
+                    }}
+                    className="rounded-lg border border-[var(--color-border)] px-5 text-sm font-bold text-[var(--color-text-muted)]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <ExerciseSearchModal isOpen={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={addExercise} />
     </div>
   );
 }

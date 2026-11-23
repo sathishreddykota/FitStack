@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Scale, X, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { api, errorMessage } from "@/lib/api-client";
 
 interface LogWeightModalProps {
   isOpen: boolean;
@@ -27,25 +28,14 @@ export function LogWeightModal({ isOpen, onClose, currentWeight }: LogWeightModa
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/progress/weight", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          weightKg: Number(weight),
-          date,
-          notes: notes.trim() || undefined,
-        }),
+      await api("/api/progress/weight", {
+        body: { weightKg: Number(weight), date, notes: notes.trim() || undefined },
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to log weight");
-      }
-
       toast.success("Weight logged successfully!");
       router.refresh();
       onClose();
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error) {
+      toast.error(errorMessage(error, "Couldn't log weight."));
     } finally {
       setIsSubmitting(false);
     }
@@ -126,7 +116,7 @@ export function LogWeightModal({ isOpen, onClose, currentWeight }: LogWeightModa
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl brand-gradient py-3.5 font-bold text-white shadow-[var(--shadow-glow-brand)] transition-transform active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 hover:brightness-110"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl brand-gradient py-3.5 font-bold text-[var(--color-on-brand)] shadow-[var(--shadow-glow-brand)] transition-transform active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 hover:brightness-110"
           >
             {isSubmitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Search, Loader2 } from "lucide-react";
+import { api } from "@/lib/api-client";
 
 interface Exercise {
   id: string;
@@ -27,9 +28,7 @@ export function ExerciseSearchModal({ isOpen, onClose, onSelect }: Props) {
     const search = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/workout/exercises?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        if (data.exercises) setExercises(data.exercises);
+        setExercises(await api<Exercise[]>(`/api/workout/exercises?q=${encodeURIComponent(query)}`));
       } catch (e) {
         console.error(e);
       } finally {

@@ -58,8 +58,8 @@ export function HabitSliders({ initialMood, initialEnergy, initialSoreness, onSa
   return (
     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
-        <div className="h-10 w-10 rounded-xl bg-[var(--color-accent-500)]/10 flex items-center justify-center">
-          <Activity className="h-5 w-5 text-[var(--color-accent-400)]" />
+        <div className="h-10 w-10 rounded-xl bg-[var(--color-fiber)]/10 flex items-center justify-center">
+          <Activity className="h-5 w-5 text-[var(--color-fiber)]" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Daily Readiness</h2>
@@ -74,7 +74,7 @@ export function HabitSliders({ initialMood, initialEnergy, initialSoreness, onSa
           setMood, 
           <HeartPulse className="h-4 w-4 text-[var(--color-text-muted)]" />,
           ["Poor", "Great"],
-          "text-[var(--color-accent-400)]"
+          "text-[var(--color-fiber)]"
         )}
 
         {renderSlider(

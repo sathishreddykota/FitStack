@@ -17,14 +17,18 @@ export function StartGoogle({ id }: { id: string | null }) {
     // Absolute URLs: Clerk finishes the Google step on its own domain first (dev mode),
     // where a relative "/native-auth/…" would point at Clerk's site instead of ours.
     const origin = window.location.origin;
-    const back = `${origin}/native-auth/done?id=${id}`;
+    // Both return addresses go through the callback page: Clerk always finishes the
+    // sign-in there (sets the session on this origin), and the callback then forwards
+    // to /native-auth/done. Sending "complete" straight to done skipped that step on a
+    // browser tab Clerk hadn't seen before, and done waited for a session that never came.
+    const callback = `${origin}/native-auth/callback?id=${id}`;
     (async () => {
       // The browser may still be signed in from earlier (maybe as someone else): start clean.
       if (clerk.session) await clerk.signOut({ redirectUrl: window.location.href });
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: `${origin}/native-auth/callback?id=${id}`,
-        redirectUrlComplete: back,
+        redirectUrl: callback,
+        redirectUrlComplete: callback,
       });
     })().catch((e) => setError(e instanceof Error ? e.message : "Couldn't open Google sign-in."));
   }, [id, isLoaded, signIn, clerk]);

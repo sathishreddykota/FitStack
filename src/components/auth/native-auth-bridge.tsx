@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { claimGoogleSignIn, listenForSignInReturn, nativeAuthAvailable } from "@/lib/native-auth";
@@ -13,13 +12,10 @@ import { claimGoogleSignIn, listenForSignInReturn, nativeAuthAvailable } from "@
  */
 export function NativeAuthBridge() {
   const clerk = useClerk();
-  const router = useRouter();
   const clerkRef = useRef(clerk);
-  const routerRef = useRef(router);
   useEffect(() => {
     clerkRef.current = clerk;
-    routerRef.current = router;
-  }, [clerk, router]);
+  }, [clerk]);
 
   useEffect(() => {
     if (!nativeAuthAvailable()) return;
@@ -36,8 +32,9 @@ export function NativeAuthBridge() {
         const attempt = await c.client!.signIn.create({ strategy: "ticket", ticket });
         if (attempt.status !== "complete" || !attempt.createdSessionId) throw new Error("Sign-in didn't finish. Please try again.");
         await c.setActive({ session: attempt.createdSessionId });
-        routerRef.current.replace("/dashboard");
-        routerRef.current.refresh();
+        // A full load (not router.replace): the sign-in/sign-up screen underneath kept
+        // the in-app navigation from taking effect, leaving a signed-in app on sign-up.
+        window.location.replace(new URL("/dashboard", window.location.origin).href);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Sign-in didn't finish. Please try again.");
       }

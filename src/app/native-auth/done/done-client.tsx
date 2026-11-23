@@ -1,21 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useClerk } from "@clerk/nextjs";
+import { appLink, completeAndReturn } from "../hand-back";
 import { NativeAuthShell } from "../shell";
 
-/**
- * Link back into the app. An Android "intent:" link names the app's package, so
- * Chrome hands it only to Daystrong. It carries just the hand-off id — useless
- * without the secret the app kept.
- */
-const appLink = (id: string) => `intent://auth?id=${id}#Intent;scheme=com.daystrong.app;package=com.daystrong.app;end`;
-
 /** How long to wait for the session before saying sign-in didn't finish. */
-const WAIT_MS = 8000;
+const WAIT_MS = 15000;
 
 export function DoneClient({ id }: { id: string }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const clerk = useClerk();
   const [state, setState] = useState<"waiting" | "ready" | "failed">("waiting");
   const sent = useRef(false);
 
@@ -27,14 +22,11 @@ export function DoneClient({ id }: { id: string }) {
   useEffect(() => {
     if (!isLoaded || !isSignedIn || sent.current) return;
     sent.current = true;
-    fetch("/api/native-auth/complete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        setState("ready");
-        window.location.href = appLink(id);
-      })
+    if (!clerk.session) return;
+    completeAndReturn(clerk.session, id)
+      .then(() => setState("ready"))
       .catch(() => setState("failed"));
-  }, [isLoaded, isSignedIn, id]);
+  }, [isLoaded, isSignedIn, id, clerk]);
 
   if (state === "failed") return <NativeAuthShell title="Sign-in didn't finish" body="Go back to the Daystrong app and tap “Continue with Google” again." />;
   if (state === "waiting") return <NativeAuthShell title="Signing you in…" body="Just a moment." spinner />;

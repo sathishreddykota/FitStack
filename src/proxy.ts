@@ -28,6 +28,7 @@ const isPublicRoute = createRouteMatcher([
   "/native-auth(.*)",
   "/api/native-auth/begin",
   "/api/native-auth/claim",
+  "/api/native-auth/log",
 ]);
 
 const isApiRoute = createRouteMatcher(["/api(.*)"]);

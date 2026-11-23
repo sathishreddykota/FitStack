@@ -1,17 +1,10 @@
 import type { Metadata } from "next";
-import { AuthenticateWithRedirectCallback } from "@clerk/nextjs";
-import { NativeAuthShell } from "../shell";
+import { FinishGoogle } from "./finish-google";
 
 export const metadata: Metadata = { title: "Signing in", robots: { index: false } };
 
-// Google sends the browser tab back here; Clerk finishes sign-in (or sign-up for a new user).
+// Google sends the browser tab back here; we finish sign-in (or sign-up) ourselves.
 export default async function NativeAuthCallback({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
   const { id } = await searchParams;
-  const done = `/native-auth/done?id=${encodeURIComponent(typeof id === "string" ? id : "")}`;
-  return (
-    <>
-      <NativeAuthShell title="Signing you in…" body="Just a moment." spinner />
-      <AuthenticateWithRedirectCallback signInForceRedirectUrl={done} signUpForceRedirectUrl={done} />
-    </>
-  );
+  return <FinishGoogle id={typeof id === "string" && /^[a-z0-9]{10,64}$/.test(id) ? id : null} />;
 }

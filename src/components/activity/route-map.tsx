@@ -3,17 +3,59 @@
 import { useEffect, useRef, useState } from "react";
 import type { LatLngExpression, Map as LeafletMap, Polyline, CircleMarker, Marker } from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 // ─────────────────────────────────────────────
-// Route map (Leaflet). Dark street tiles from MapTiler when
-// NEXT_PUBLIC_MAPTILER_KEY is set; without a key the route still draws as a
-// glowing line on a dark grid, so recording never depends on a map provider.
+// Route map (Leaflet) on a dark street map:
+//  - default: OpenFreeMap's dark style (free, no key, no usage limits, OpenStreetMap
+//    data), drawn by MapLibre GL inside Leaflet via @maplibre/maplibre-gl-leaflet
+//  - NEXT_PUBLIC_MAPTILER_KEY set: MapTiler's raster dark tiles instead
+// If the street map can't load (offline, WebGL off), the route still draws as a
+// glowing line on the dark background, so recording never depends on a map provider.
 // ─────────────────────────────────────────────
 
 const KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 const TILE_URL = KEY ? `https://api.maptiler.com/maps/dataviz-dark/256/{z}/{x}/{y}.png?key=${KEY}` : null;
 const ATTRIBUTION =
   '<a href="https://www.maptiler.com/copyright/" target="_blank" rel="noreferrer">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>';
+const OFM_STYLE = "https://tiles.openfreemap.org/styles/dark";
+/** Copied from node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs — update with the package. */
+const MAPLIBRE_WORKER = "/vendor/maplibre-gl-6.16.0-worker.mjs";
+const OFM_ATTRIBUTION =
+  '<a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a> <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">© OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>';
+
+/**
+ * OpenFreeMap's dark style draws roads almost the colour of the background, so a
+ * run's streets were barely visible. Re-tint it for Ember Night: readable grey roads
+ * (main roads brighter), a hint of blue water and green parks, legible labels —
+ * the orange route still the brightest thing on the map.
+ */
+function emberNightMap(map: import("maplibre-gl").Map) {
+  type Paint = Parameters<typeof map.setPaintProperty>[1];
+  const set = (id: string, prop: Paint, value: string) => {
+    try {
+      map.setPaintProperty(id, prop, value);
+    } catch {
+      /* layer without that property */
+    }
+  };
+  for (const layer of map.getStyle().layers ?? []) {
+    const id = layer.id.toLowerCase();
+    if (layer.type === "background") set(layer.id, "background-color", "#101017");
+    else if (layer.type === "fill" && /water/.test(id)) set(layer.id, "fill-color", "#0C1722");
+    else if (layer.type === "fill" && /park|wood|grass|landcover|forest/.test(id)) set(layer.id, "fill-color", "#13201A");
+    else if (layer.type === "fill" && /building/.test(id)) set(layer.id, "fill-color", "#1A1A24");
+    else if (layer.type === "line" && /water|river|stream/.test(id)) set(layer.id, "line-color", "#13263A");
+    else if (layer.type === "line" && /casing/.test(id)) set(layer.id, "line-color", "#101017");
+    else if (layer.type === "line" && /motorway|trunk|primary|major/.test(id)) set(layer.id, "line-color", "#5C5C70");
+    else if (layer.type === "line" && /road|highway|street|secondary|tertiary|minor|service|path|track|bridge|tunnel|transportation/.test(id))
+      set(layer.id, "line-color", "#3C3C4C");
+    else if (layer.type === "symbol") {
+      set(layer.id, "text-color", "#9C9CAA");
+      set(layer.id, "text-halo-color", "#0A0A0F");
+    }
+  }
+}
 
 export interface RouteMapProps {
   /** `seg` changes after each pause; segments are drawn apart so a pause gap shows no line. */
@@ -47,7 +89,7 @@ export function RouteMap({ points, live = false, current = null, className, inte
       L.current = leaflet;
       const m = leaflet.map(el.current, {
         zoomControl: false,
-        attributionControl: !!TILE_URL,
+        attributionControl: true,
         dragging: interactive,
         scrollWheelZoom: interactive,
         doubleClickZoom: interactive,
@@ -55,8 +97,33 @@ export function RouteMap({ points, live = false, current = null, className, inte
         boxZoom: false,
         keyboard: interactive,
       });
-      if (TILE_URL) leaflet.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 19, tileSize: 256 }).addTo(m);
+      // A view first: the street-map layer only creates its map once Leaflet has one.
       m.setView([17.385, 78.4867], 15); // replaced by the route / position as soon as there is one
+      if (TILE_URL) leaflet.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 19, tileSize: 256 }).addTo(m);
+      else {
+        try {
+          // MapLibre loads its tile-decoding worker as a separate file the bundler
+          // doesn't ship, so serve a copy from /public (keep in step with the package).
+          const maplibre = await import("maplibre-gl");
+          maplibre.setWorkerUrl(MAPLIBRE_WORKER);
+          const { maplibreGL } = await import("@maplibre/maplibre-gl-leaflet");
+          if (!cancelled) {
+            const gl = maplibreGL({ style: OFM_STYLE, attribution: OFM_ATTRIBUTION, interactive: false } as Parameters<typeof maplibreGL>[0]).addTo(m);
+            const glMap = gl.getMaplibreMap();
+            // The layer creates its map synchronously (the view is set above), so "load"
+            // can't have fired yet; if it somehow has, tint straight away.
+            if (glMap?.loaded()) emberNightMap(glMap);
+            else glMap?.once("load", () => emberNightMap(glMap));
+          }
+        } catch {
+          /* no WebGL / offline: the route still draws on the dark background */
+        }
+      }
+      // The screen closed while the street map loaded: clean up instead of finishing.
+      if (cancelled) {
+        m.remove();
+        return;
+      }
       glow.current = leaflet.polyline([], { color: "#FF6B2C", weight: 14, opacity: 0.22, lineCap: "round", lineJoin: "round" }).addTo(m);
       line.current = leaflet.polyline([], { color: "#FF8A57", weight: 5, opacity: 1, lineCap: "round", lineJoin: "round" }).addTo(m);
       map.current = m;
